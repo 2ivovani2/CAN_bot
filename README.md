@@ -12,6 +12,16 @@
         cd CAN_bot
 ```
 
+2) Необходимо создать файл `constants.py` и записать туда перменную, отвечающую за токен в таком формате:<br>
+ bash```
+        touch constants.py
+	nano constants.py
+```
+  Записываем токен:
+python```
+        TELEGRAM_BOT_TOKEN = '<ваш токен>'
+```
+
 3) Произведем миграции и мигрируем 
 bash```
        	python manage.py makemigrations && python manage.py migrate
