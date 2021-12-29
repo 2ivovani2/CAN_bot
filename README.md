@@ -46,6 +46,6 @@ python manage.py runserver
 ```bash
 https://api.telegram.org/bot<ваш токен>/setWebhook?url=<url которое дал ngrok>/webhooks/tutorial/
 ```
-<div style="width:100%;height:auto;align-items:center;justify-content:center;">
+
 ![Поздравлямба](https://media.giphy.com/media/2WDKW6TCEqnJe/giphy.gif)
-</div>
+
