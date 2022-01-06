@@ -119,4 +119,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-APPEND_SLASH=False
+
+
+# Настройки бота
+TELEGRAM_BOT_TOKEN = '5014183108:AAHRG9dkoUiiSYVs7Ue-OWMa4TzujTeynkw'

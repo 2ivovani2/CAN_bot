@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import *
 
-# Register your models here.
+@admin.register(TGUser)
+class TGUserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'external_id', 'name', 'balance')
