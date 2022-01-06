@@ -12,12 +12,7 @@ git clone <ссылка на репу>
 cd CAN_bot
 ```
 
-3) Необходимо создать файл `constants.py` и записать туда перменную, отвечающую за токен в таком формате:<br>
-```bash
-touch constants.py
-nano constants.py
-```
-  Записываем токен:
+3) Необходимо в файл `settings.py` добавить наш токен в таком формате:<br>
 ```python
 TELEGRAM_BOT_TOKEN = '<ваш токен>'
 ```
@@ -37,15 +32,6 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-7) Необходимо скачать ngrok и прокинуть порты, поскольку teleram api поддерживает только https запросы
-```bash
-./ngrok http 8000
-```
-
-8) Устанавливаем вебхук, засунув такого вида ссылку в наш браузер
-```bash
-https://api.telegram.org/bot<ваш токен>/setWebhook?url=<url которое дал ngrok>/webhooks/tutorial/
-```
 
 ![Поздравлямба](https://media.giphy.com/media/2WDKW6TCEqnJe/giphy.gif)
 
