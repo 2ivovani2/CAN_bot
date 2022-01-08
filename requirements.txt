@@ -1,2 +1,13 @@
 django
 python-telegram-bot
+numpy
+pandas
+emoji
+nltk
+navec
+catboost
+mystem
+pymystem3
+pymorphy2
+sklearn
+toolz

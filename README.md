@@ -27,11 +27,15 @@ python manage.py makemigrations && python manage.py migrate
 python manage.py createsuperuser
 ```
 
-6) Запускаем веб-сервер
+6) Запускаем веб-сервер для работы с админкой
 ```bash
 python manage.py runserver
 ```
 
+7) Запускаем бота
+```bash
+python manage.py bot
+```
 
 ![Поздравлямба](https://media.giphy.com/media/2WDKW6TCEqnJe/giphy.gif)
 
