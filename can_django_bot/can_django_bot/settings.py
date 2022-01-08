@@ -123,3 +123,14 @@ STATIC_URL = '/static/'
 
 # Настройки бота
 TELEGRAM_BOT_TOKEN = '5014183108:AAHRG9dkoUiiSYVs7Ue-OWMa4TzujTeynkw'
+COMMANDS = {
+    '/start' : 'Запуск бота',
+    '/help': 'Узнать о возможностях бота',
+    '/main': 'Перейти в главное меню', 
+    '/wb': 'Анализ товаров на Wildberries',
+    '/ozon': 'Анализ товаров на Ozon',
+    '/balance':'Информация о балансе',
+    '/balance_add':'Пополнить баланс'
+}
+
+COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items()])
