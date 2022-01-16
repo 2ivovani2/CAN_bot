@@ -17,22 +17,32 @@ cd CAN_bot
 TELEGRAM_BOT_TOKEN = '<ваш токен>'
 ```
 
-4) Произведем миграции и мигрируем 
+4) Теперь на машину необходимо накатить некоторые плагины:<br>
+### MacOS
+```bash
+brew install wkhtmltopdf
+```
+### Ubuntu
+```bash
+sudo apt-get install wkhtmltopdf
+```
+
+5) Произведем миграции и мигрируем 
 ```bash
 python manage.py makemigrations && python manage.py migrate
 ```
 
-5) Можно создать суперюзера, но это необязательно 
+6) Можно создать суперюзера, но это необязательно 
 ```bash
 python manage.py createsuperuser
 ```
 
-6) Запускаем веб-сервер для работы с админкой
+7) Запускаем веб-сервер для работы с админкой
 ```bash
 python manage.py runserver
 ```
 
-7) Запускаем бота
+8) Запускаем бота
 ```bash
 python manage.py bot
 ```
