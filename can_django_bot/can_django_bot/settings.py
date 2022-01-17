@@ -12,6 +12,31 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 
+from nn_models.ru_sentiment_extraction import RUSentimentExtractor
+from nn_models.wordnet import WordNetReviewGenerator
+
+import json
+import math
+import os
+from collections import Counter
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.model_selection import train_test_split as tts
+from sklearn.decomposition import PCA
+
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from navec import Navec
+import catboost
+from pymystem3 import Mystem
+import pymorphy2
+
+from typing import Optional, Any
+
+from toolz import pipe
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
@@ -122,7 +147,7 @@ STATIC_URL = '/static/'
 
 
 # Настройки бота
-TELEGRAM_BOT_TOKEN = '5014183108:AAHRG9dkoUiiSYVs7Ue-OWMa4TzujTeynkw'
+TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
 COMMANDS = {
     '/start' : 'Запуск бота',
     '/help': 'Узнать о возможностях бота',
@@ -130,7 +155,23 @@ COMMANDS = {
     '/wb': 'Анализ товаров на Wildberries',
     '/ozon': 'Анализ товаров на Ozon',
     '/balance':'Информация о балансе',
-    '/balance_add':'Пополнить баланс'
+    '/balance_add':'Пополнить баланс',
+    '/demo_report':'Посмотреть демо отчет'
 }
 
 COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items()])
+
+# Настройки моделей машинного обучения
+
+print('Configing ML models ✌🏻')
+path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
+EMB_MODEL = Navec.load(path)
+
+extractor_clf = catboost.CatBoostClassifier()
+extractor_clf = extractor_clf.load_model('./nn_models/en_clf_model')
+
+wrg_clf = catboost.CatBoostClassifier()
+wrg_clf = wrg_clf.load_model('./nn_models/wordnet_classifier')
+
+EXTRACTOR = RUSentimentExtractor(vectorizer=EMB_MODEL, classifier=extractor_clf)
+WRG = WordNetReviewGenerator(clf=wrg_clf, extractor=EXTRACTOR, emb_model=EMB_MODEL)

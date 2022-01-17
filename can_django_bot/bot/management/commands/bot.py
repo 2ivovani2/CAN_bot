@@ -204,6 +204,13 @@ def text_handler(update:Update, context:CallbackContext):
                 parse_mode=ParseMode.HTML
             )
 
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text='😵 Мои создатель пока не научили меня отвечать на такие сообщения. ',
+                parse_mode=ParseMode.HTML
+            )
+
 @log_errors
 def balance_add_command_handler(update:Update, context:CallbackContext):
     """
@@ -240,11 +247,16 @@ def balance_info(update:Update, context:CallbackContext):
     )
 
 @log_errors
-def demo_report_hander(update: Update, context: CallbackContext):
+def demo_report_handler(update: Update, context: CallbackContext):
     """
-        TODO: Дописать доку
+       Функция, которая генерирует демо отчет
     """
     user = user_get_by_update(update)
+
+    context.bot.send_message(
+        chat_id=user.external_id,
+        text='👁 Секундочку... Мы готовим демо отчет...'
+    )
 
     demo_data = {
         "достоинства": {
@@ -386,12 +398,35 @@ def demo_report_hander(update: Update, context: CallbackContext):
     context.bot.send_document(
         chat_id=user.external_id,
         document=pdf,
-        caption=f'<b>{user.name}</b>, вот так выглядит демо отчет.',
+        caption=f'<b>{user.name}</b>, вот так выглядят отчеты.',
         filename='demo_report.pdf',
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
                 InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+            ],
+
+        ]),
+    )
+
+@log_errors
+def ozon_report_handler(update: Update, context: CallbackContext):
+    """
+        Функция обработки ozon
+    """
+
+    user = user_get_by_update(update)
+
+    context.bot.send_message(
+        chat_id=user.external_id,
+        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik и мы сделаем отчет специально под вас за ту же стоимость.',
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+            ],
+            [
+                InlineKeyboardButton('Написать 🗣', url='https://t.me/i_vovani'),
             ],
 
         ]),
@@ -403,8 +438,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         #1 - правильное подключение
         request = Request(
-            connect_timeout = 0.5,
-            read_timeout = 1.0
+            connect_timeout = 1.0,
+            read_timeout = 1.5
         )
 
         bot = Bot(
@@ -435,17 +470,25 @@ class Command(BaseCommand):
         help_callback_handler = CallbackQueryHandler(help_command_handler, pattern='keyboard_help')
         updater.dispatcher.add_handler(help_callback_handler)
 
+        ## обработчик ozon
+        updater.dispatcher.add_handler(CommandHandler('ozon', ozon_report_handler))    
+        updater.dispatcher.add_handler(CallbackQueryHandler(ozon_report_handler, pattern='ozon_report'))
+
+        ## обработчик  демо отчета
+        updater.dispatcher.add_handler(CommandHandler('demo_report', demo_report_handler))
+        updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_handler, pattern='demo_report'))
+
         ## обработчики работы с балансом
+        
         updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
         updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
         updater.dispatcher.add_handler(CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'))
         
-    
         updater.dispatcher.add_handler(CommandHandler('balance_add', balance_add_command_handler))    
-        updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))
+        
 
-        ## обработчик  демо отчета
-        updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_hander, pattern='demo_report'))
+        ## обработчик текста, после него нельзя добавлять обработчики
+        updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))
 
         #3 - запустить бесконечную обработку входящих сообщений
         updater.start_polling()
