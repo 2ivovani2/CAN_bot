@@ -7,4 +7,4 @@ class TGUserAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdministration(admin.ModelAdmin):
-    list_display = ('payment_id', 'amount', 'user')
+    list_display = ('telegram_payment_charge_id', 'provider_payment_charge_id', 'amount', 'date')

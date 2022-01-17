@@ -148,6 +148,8 @@ STATIC_URL = '/static/'
 
 # Настройки бота
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
+PROVIDER_TOKEN = '390540012:LIVE:21580'
+
 COMMANDS = {
     '/start' : 'Запуск бота',
     '/help': 'Узнать о возможностях бота',
