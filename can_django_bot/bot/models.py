@@ -1,3 +1,4 @@
+from enum import unique
 from django.db import models
 
 class TGUser(models.Model):
@@ -18,8 +19,9 @@ class TGUser(models.Model):
         verbose_name='Баланс пользователя'
     )
 
-    name = models.TextField(
+    name = models.CharField(
         null=True,
+        max_length=255,
         verbose_name='Полное имя пользователя', 
     )
 
@@ -37,9 +39,23 @@ class TGUser(models.Model):
         verbose_name_plural = 'Профили'
 
 class Transaction(models.Model):
-    payment_id = models.PositiveBigIntegerField(
-        verbose_name='ID транзакции',
+    telegram_payment_charge_id = models.CharField(
+        max_length=255,
         unique=True,
+        verbose_name='ID транзакции с системе Telegram', 
+        null=True
+    )
+
+    provider_payment_charge_id = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name='ID транзакции с системе ЮКасса', 
+        null=True
+    )
+
+    invoice_payload = models.TextField(
+        verbose_name='Описание платежа', 
+        null=True
     )
 
     amount = models.FloatField(
@@ -59,7 +75,7 @@ class Transaction(models.Model):
     )
 
     def __str__(self):
-        return f"#{self.payment_id} {self.amount} {self.date}"
+        return f"#{self.user} {self.amount} {self.date}"
 
     class Meta:
         verbose_name = 'Транзакция'

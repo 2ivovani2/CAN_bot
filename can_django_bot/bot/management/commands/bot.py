@@ -1,10 +1,11 @@
+from cmath import log
 from email.mime import image
 from typing import Pattern
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, LabeledPrice
-from telegram.ext import CallbackContext, Filters, MessageHandler, Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, ConversationHandler
+from telegram.ext import CallbackContext, Filters, MessageHandler, Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, ConversationHandler, TypeHandler
 from telegram.utils.request import Request
 
 from bot.models import *
@@ -112,6 +113,55 @@ def help_command_handler(update:Update, context:CallbackContext):
     )
 
 @log_errors
+def payment_confirmation_hanlder(update:Update, context:CallbackContext):
+    """
+        Функция проверки того, что платеж прошел успешно и можно зачислять деньги на баланс
+    """
+    
+    user = TGUser.objects.get(
+        external_id = update.to_dict()['message']['from']['id'],
+        username = update.to_dict()['message']['from']['username'],
+    )
+    
+    if 'successful_payment' in update.to_dict()['message'].keys():
+        payment_info = update.to_dict()['message']['successful_payment']
+        total_amount = int(str(payment_info['total_amount'])[:-2])
+
+        user.is_in_payment = False
+        user.balance += total_amount
+        user.save()
+
+        transaction = Transaction(
+            provider_payment_charge_id=payment_info['provider_payment_charge_id'],
+            telegram_payment_charge_id=payment_info['telegram_payment_charge_id'],
+            invoice_payload=payment_info['invoice_payload'],
+            amount=int(total_amount),
+            user=user 
+        )
+
+        transaction.save()
+
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🤑 Ваш счет пополнен. Можете пользоваться услугами бота.\n\n<b>ID транзакции Telegram:</b>\n<i>{payment_info["telegram_payment_charge_id"]}</i>\n\n<b>ID транзакции ЮКасса:</b>\n<i>{payment_info["provider_payment_charge_id"]}</i>\n\nЕсли возникли какие_либо вопросы, пишите @i_vovani или @fathutnik',
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                ],
+                [
+                    InlineKeyboardButton('Написать 🗣', url='https://t.me/i_vovani'),
+                ],
+
+            ]),
+        )
+    else:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
+        )
+
+@log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
     """
         Функция конечного потдверждения операции оплаты
@@ -121,38 +171,11 @@ def pre_checkout_handler(update:Update, context:CallbackContext):
     user = TGUser.objects.get(external_id=chat_id)
 
     query_id = update.to_dict()['pre_checkout_query']['id']
-
-    total_amount = int(str(update.to_dict()['pre_checkout_query']['total_amount'])[:-2])
-
-    success = context.bot.answer_pre_checkout_query(
+    context.bot.answer_pre_checkout_query(
         pre_checkout_query_id=query_id, 
         ok=True,
     )
 
-    if success:
-        user.is_in_payment = False
-        user.balance += total_amount
-        user.save()
-
-        transaction = Transaction(
-            payment_id=query_id,
-            amount=int(total_amount),
-            user=user 
-        )
-
-        transaction.save()
-
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text='🤑 Ваш счет пополнен. Можете пользоваться услугами бота.'
-        )
-    
-    else:
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
-        )
-    
 @log_errors
 def text_handler(update:Update, context:CallbackContext):
     """
@@ -165,7 +188,7 @@ def text_handler(update:Update, context:CallbackContext):
         user_message = update.message.text
         try:
             amt = int(user_message)
-            if amt >= 1000:
+            if amt >= 0:
                 context.bot.send_message(
                     chat_id=user.external_id,
                     text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
@@ -177,7 +200,7 @@ def text_handler(update:Update, context:CallbackContext):
                     title='CAN Sentiment Analysis',
                     description=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
                     payload=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
-                    provider_token='381764678:TEST:32365',
+                    provider_token=settings.PROVIDER_TOKEN,
                     currency='RUB',
                     prices=[
                         LabeledPrice(
@@ -195,7 +218,9 @@ def text_handler(update:Update, context:CallbackContext):
                     text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>1000₽</b></i>.',
                     parse_mode=ParseMode.HTML
                 ) 
-        except:
+        except Exception as e:
+            print(e)
+
             user.is_in_payment = False
             user.save()
             context.bot.send_message(
@@ -432,6 +457,9 @@ def ozon_report_handler(update: Update, context: CallbackContext):
         ]),
     )
 
+
+
+
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
 
@@ -452,6 +480,7 @@ class Command(BaseCommand):
             bot = bot,
             use_context = True,
         )
+ 
 
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
@@ -485,10 +514,12 @@ class Command(BaseCommand):
         updater.dispatcher.add_handler(CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'))
         
         updater.dispatcher.add_handler(CommandHandler('balance_add', balance_add_command_handler))    
+        updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
         
-
         ## обработчик текста, после него нельзя добавлять обработчики
         updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))
+
+        updater.dispatcher.add_handler(TypeHandler(Update, payment_confirmation_hanlder)) 
 
         #3 - запустить бесконечную обработку входящих сообщений
         updater.start_polling()
