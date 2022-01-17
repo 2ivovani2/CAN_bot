@@ -15,6 +15,7 @@
                 width:200px;
                 height:200px;
                 border-radius: 50%;
+                display: inline-block;
             }
 
             .columns-wrapper{
@@ -32,16 +33,16 @@
     </head>
 
     <body>
-        <div class="container">
+        <div class="container p-2">
             
             <div class="row">
-            <div class="col-12 columns-wrapper">
-                <img id="preview" src="{{image_link}}" alt="">
-            </div>  
+                <div class="col-12 columns-wrapper text-center">
+                    <img id="preview" src="{{image_link}}" alt="">
+                </div>  
             </div>
 
             <div class="row">
-                <div class="col-12 columns-wrapper p-4">
+                <div class="col-12 columns-wrapper p-4 text-center">
                     <h1>Отчет по товару: <span class="text-primary" style="font-weight: 200;">{{product_name}}</span></h1>
                 </div>
             </div>
@@ -50,7 +51,7 @@
 
             <h1 class="pb-2">Основные преимущества</h1>
 
-            <ul class="list-group">
+            <ul class="list-group pb-2">
                 {% for point, refs in positive %}
                 
                 <li class="list-group-item">
@@ -69,14 +70,10 @@
                                 {% for i in refs.examples|length|times %}
                                 <li class="list-group-item">
                                     <div class="row">
-                                        <div class="col-8 columns-wrapper">
+                                        <div class="col-12 columns-wrapper" style="justify-content: space-around !important;">
                                             <span style="align-self: flex-start;">{{refs.examples|get_by_index:i}}</span>
-                                        </div>
-                                        
-                                        <div class="col-4 columns-wrapper" style="flex-direction: row; justify-content: space-around;">
                                             <span class="text-success"> {{refs.rates|get_by_index:i}} <i class="fas fa-star text-warning"></i></span>
                                         </div>
-                                        
                                     </div>
                                 </li>
                                 
@@ -90,10 +87,10 @@
             {% endfor %}
             </ul>
 
-            <hr>
-            <h1 class="pb-2">Возможные недостатки</h1>
+            
+            <h1 class="pb-2 mt-2">Возможные недостатки</h1>
 
-            <ul class="list-group">
+            <ul class="list-group p-2">
                 {% for point, refs in negative %}
                 
                 <li class="list-group-item">
@@ -112,12 +109,9 @@
                                 {% for i in refs.examples|length|times %}
                                 <li class="list-group-item">
                                     <div class="row">
-                                        <div class="col-8 columns-wrapper">
+                                        <div class="col-12 columns-wrapper" style="justify-content: space-around !important;">
                                             <span style="align-self: flex-start;">{{refs.examples|get_by_index:i}}</span>
-                                        </div>
-                                        
-                                        <div class="col-4 columns-wrapper" style="flex-direction: row; justify-content: space-around;">
-                                            <span class="text-danger"> {{refs.rates|get_by_index:i}} <i class="fas fa-star text-warning"></i></span>
+                                            <span class="text-success"> {{refs.rates|get_by_index:i}} <i class="fas fa-star text-warning"></i></span>
                                         </div>
                                         
                                     </div>
@@ -133,7 +127,7 @@
             {% endfor %}
             </ul>
 
-            <p class="p-2">
+            <p class="mt-2">
                 <i class="far fa-copyright"></i> CAN. Отчет подготовлен ботом @can_b2b_bot. Все права защищены.
             </p>
 
