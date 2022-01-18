@@ -65,9 +65,10 @@ class WordNetReviewGenerator:
 
             if len(good_cls) < 10:
                 por = 0
-            else:
+            elif t == 'pos':
                 por = 2
-
+            else:
+                por = 0
 
             for w in keywords:        
                 rate = []
