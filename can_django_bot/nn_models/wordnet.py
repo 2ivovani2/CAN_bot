@@ -63,12 +63,10 @@ class WordNetReviewGenerator:
             end_data = {}
             garbage = {}
 
-            if len(good_cls) < 1000:
+            if len(good_cls) < 10:
                 por = 0
-            elif t == 'pos':
-                por = 2
             else:
-                por = 0
+                por = 2
 
 
             for w in keywords:        
@@ -87,10 +85,13 @@ class WordNetReviewGenerator:
                                     rate.append(row[1])
                                     vals.append(sent)
 
-
+                
                 if len(vals) > por:
+                    vals = vals[:2]
+                    rate = rate[:2] 
+
                     n, a = w.split()
-                    w = self.morph.parse(n)[0].normal_form
+                    w = self.morph.parse(n)[0].normal_form + " " + a
 
                     if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
                         if w in garbage.keys():

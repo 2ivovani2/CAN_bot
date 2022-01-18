@@ -13,6 +13,10 @@ from envparse import env
 import scrapy
 from scrapy.exceptions import CloseSpider
 from scrapy.crawler import CrawlerProcess
+from scrapy.crawler import CrawlerRunner
+from twisted.internet import reactor
+
+
 
 import pandas as pd
 
@@ -75,7 +79,6 @@ class WildberriesCommentsSpider(BaseSpider):
         products_data_js = re.sub('routes: routes,', '', products_data_js)
         products_data_js = re.sub('routesDictionary: routesDictionary,', '', products_data_js)
 
-        #print(re.findall('seoHelper', products_data_js))
         products_init = re.findall(r'wb\.spa\.init\(({.*?})\);', products_data_js)[0]
 
 
@@ -105,7 +108,6 @@ class WildberriesCommentsSpider(BaseSpider):
         for feedback in feedbacks['feedbacks']:
             yield {
                 'text': feedback['text'],
-                #'name': feedback['goodsName'],
                 'rating': feedback['productValuation'],
                 'created_at': feedback['createdDate'],
             }
@@ -117,14 +119,16 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
 
     filename = save_filename + str(uuid.uuid4()) + '.json'
 
-    process = CrawlerProcess(settings={
+    process = CrawlerRunner(settings={
         "FEEDS": {
             f"{filename}": {"format": "json"},
         },
     })
 
     process.crawl(WildberriesCommentsSpider)
-    process.start()
+    d = process.join()
+    d.addBoth(lambda _: reactor.stop())
+    reactor.run()
 
     with open(filename) as data_json:
         data = json.loads(data_json.read())
@@ -133,8 +137,7 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
     data = pd.DataFrame(data)
     data.set_axis(['review', 'rate', 'created_at'], axis='columns', inplace=True)
     data['review'] = data['review'].apply(lambda x: x.strip().replace('\n',''))
-    data = data[['review', 'rate']]
 
     os.remove(filename)
-
     return name, photo, data
+

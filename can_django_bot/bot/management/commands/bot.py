@@ -10,7 +10,7 @@ from telegram.utils.request import Request
 from bot.models import *
 from bot.report_generation import generate_report
 
-from parsing.wb_crawler import *
+from parsing.wb_crawler import parse_product
 
 def log_errors(f):
     """
@@ -118,50 +118,53 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
     """
         Функция проверки того, что платеж прошел успешно и можно зачислять деньги на баланс
     """
+    try:
+        user = TGUser.objects.get(
+            external_id = update.to_dict()['message']['from']['id'],
+            username = update.to_dict()['message']['from']['username'],
+        )
+        
+        if 'successful_payment' in update.to_dict()['message'].keys():
+            payment_info = update.to_dict()['message']['successful_payment']
+            total_amount = int(str(payment_info['total_amount'])[:-2])
+
+            user.is_in_payment = False
+            user.balance += total_amount
+            user.save()
+
+            transaction = Transaction(
+                provider_payment_charge_id=payment_info['provider_payment_charge_id'],
+                telegram_payment_charge_id=payment_info['telegram_payment_charge_id'],
+                invoice_payload=payment_info['invoice_payload'],
+                amount=int(total_amount),
+                user=user 
+            )
+
+            transaction.save()
+
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🤑 Ваш счет пополнен. Можете пользоваться услугами бота.\n\n<b>ID транзакции Telegram:</b>\n<i>{payment_info["telegram_payment_charge_id"]}</i>\n\n<b>ID транзакции ЮКасса:</b>\n<i>{payment_info["provider_payment_charge_id"]}</i>\n\nЕсли возникли какие_либо вопросы, пишите @i_vovani или @fathutnik',
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                    ],
+                    [
+                        InlineKeyboardButton('Написать 🗣', url='https://t.me/i_vovani'),
+                    ],
+
+                ]),
+            )
+        else:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
+            )
+
+    except:
+        pass
     
-    user = TGUser.objects.get(
-        external_id = update.to_dict()['message']['from']['id'],
-        username = update.to_dict()['message']['from']['username'],
-    )
-    
-    if 'successful_payment' in update.to_dict()['message'].keys():
-        payment_info = update.to_dict()['message']['successful_payment']
-        total_amount = int(str(payment_info['total_amount'])[:-2])
-
-        user.is_in_payment = False
-        user.balance += total_amount
-        user.save()
-
-        transaction = Transaction(
-            provider_payment_charge_id=payment_info['provider_payment_charge_id'],
-            telegram_payment_charge_id=payment_info['telegram_payment_charge_id'],
-            invoice_payload=payment_info['invoice_payload'],
-            amount=int(total_amount),
-            user=user 
-        )
-
-        transaction.save()
-
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text=f'🤑 Ваш счет пополнен. Можете пользоваться услугами бота.\n\n<b>ID транзакции Telegram:</b>\n<i>{payment_info["telegram_payment_charge_id"]}</i>\n\n<b>ID транзакции ЮКасса:</b>\n<i>{payment_info["provider_payment_charge_id"]}</i>\n\nЕсли возникли какие_либо вопросы, пишите @i_vovani или @fathutnik',
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                ],
-                [
-                    InlineKeyboardButton('Написать 🗣', url='https://t.me/i_vovani'),
-                ],
-
-            ]),
-        )
-    else:
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
-        )
-
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
     """
@@ -219,6 +222,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
             parse_mode=ParseMode.HTML,
         )
         ConversationHandler.END
+        return
 
     try:
         amt = int(user_message)
@@ -476,7 +480,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. Просто пришлите ссылки и мы сделаем все за вас.',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \nПросто пришлите ссылки и мы сделаем все за вас.',
         parse_mode=ParseMode.HTML,
     )
 
@@ -505,84 +509,84 @@ def analize(update: Update, context: CallbackContext):
             parse_mode=ParseMode.HTML,
     )
     
-    # try:
-    name, image, data = parse_product(txt)
-    if data.shape[0] < 100:
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text=f'🥲 К сожалению, мы не можем проанализировать данный товар, поскольку на нем слишком мало отзывов. ',
-            parse_mode=ParseMode.HTML,
-        )
-    else:
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\n\nСписываю деньги и начинаю анализ...',
-            parse_mode=ParseMode.HTML,
-        )
-
-        if user.balance < 1000:
+    try:
+        name, image, data = parse_product(txt)
+        if data.shape[0] < 100:
             context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
+                text=f'🥲 К сожалению, мы не можем проанализировать данный товар, поскольку на нем слишком мало отзывов. ',
                 parse_mode=ParseMode.HTML,
-                reply_markup=InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                        InlineKeyboardButton('Пополнить счет 💰', callback_data='balance_add')
-                    ],
-
-                ]),
             )
         else:
-            user.balance -= 1000
-            user.save()
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\n\nСписываю деньги и начинаю анализ...',
+                parse_mode=ParseMode.HTML,
+            )
 
-            try:
-                out = settings.WRG.run(raw_data=data)
-
+            if user.balance < 1000:
                 context.bot.send_message(
                     chat_id=user.external_id,
-                    text='👁 Анализ прошел успешно... Готовим отчет...'
-                )
-
-                pdf = generate_report(out, image, name)
-
-                context.bot.send_document(
-                    chat_id=user.external_id,
-                    document=pdf,
-                    caption=f'<b>{user.name}</b>, ваш отчет готов.',
-                    filename='report.pdf',
+                    text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
                     parse_mode=ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup([
                         [
                             InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                            InlineKeyboardButton('Пополнить счет 💰', callback_data='balance_add')
                         ],
 
                     ]),
                 )
-
-            except:
-                user.balance += 1000
+            else:
+                user.balance -= 1000
                 user.save()
-                context.bot.send_message(
-                    chat_id=user.external_id,
-                    text=f'🤒 <b>{user.name}</b>, произошла ошибка в работе алгоритма. Не волнуйтесь, ваши деньги возвращены, а мы уже решаем эту проблему.',
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                        ],
 
-                    ]),
-                )
+                try:
+                    out = settings.WRG.run(raw_data=data)
 
-    # except Exception as e:
-    #     print(e)
-    #     context.bot.send_message(
-    #         chat_id=user.external_id,
-    #         text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже.',
-    #         parse_mode=ParseMode.HTML,
-    #     )
+                    context.bot.send_message(
+                        chat_id=user.external_id,
+                        text='🪛 Анализ прошел успешно... Готовим отчет...'
+                    )
+
+                    pdf = generate_report(out, image, name)
+
+                    context.bot.send_document(
+                        chat_id=user.external_id,
+                        document=pdf,
+                        caption=f'<b>{user.name}</b>, ваш отчет готов.',
+                        filename='report.pdf',
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=InlineKeyboardMarkup([
+                            [
+                                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                            ],
+
+                        ]),
+                    )
+
+                except:
+                    user.balance += 1000
+                    user.save()
+                    context.bot.send_message(
+                        chat_id=user.external_id,
+                        text=f'🤒 <b>{user.name}</b>, произошла ошибка в работе алгоритма. Не волнуйтесь, ваши деньги возвращены, а мы уже решаем эту проблему.',
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=InlineKeyboardMarkup([
+                            [
+                                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                            ],
+
+                        ]),
+                    )
+
+    except Exception as e:
+        print(e)
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже. \n\n<b>Описание ошибки:</b>\n{e}',
+            parse_mode=ParseMode.HTML,
+        )
 
     return ConversationHandler.END
 
