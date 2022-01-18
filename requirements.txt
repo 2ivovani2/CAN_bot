@@ -12,3 +12,5 @@ pymorphy2
 sklearn
 toolz
 pdfkit
+dukpy
+scrapy

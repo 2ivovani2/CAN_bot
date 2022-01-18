@@ -50,7 +50,7 @@ SECRET_KEY = '-f8vgnwf&!dnhtu1ll*iy29p840eytcx3$z0fq@)h=8j@7lv+*'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = 127.0.0.1, bot.canb2b.ru
+ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru']
 
 
 # Application definition
@@ -148,7 +148,7 @@ STATIC_URL = '/static/'
 
 # Настройки бота
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
-PROVIDER_TOKEN = '390540012:LIVE:21580'
+PROVIDER_TOKEN = '381764678:TEST:32365'
 
 COMMANDS = {
     '/start' : 'Запуск бота',

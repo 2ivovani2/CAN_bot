@@ -1,15 +1,16 @@
-from cmath import log
 from email.mime import image
 from typing import Pattern
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, LabeledPrice
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, LabeledPrice, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, ConversationHandler, TypeHandler
 from telegram.utils.request import Request
 
 from bot.models import *
 from bot.report_generation import generate_report
+
+from parsing.wb_crawler import *
 
 def log_errors(f):
     """
@@ -27,6 +28,7 @@ def log_errors(f):
 
     return inner
 
+@log_errors
 def user_get_by_update(update: Update):
     """
         Функция обработчик, возвращающая django instance пользователя
@@ -86,7 +88,6 @@ def start_command_handler(update:Update, context:CallbackContext):
         reply_markup=start_reply_markup,
         parse_mode = ParseMode.HTML
     )
-
 
 @log_errors
 def help_command_handler(update:Update, context:CallbackContext):
@@ -167,9 +168,6 @@ def pre_checkout_handler(update:Update, context:CallbackContext):
         Функция конечного потдверждения операции оплаты
     """
 
-    chat_id = update.to_dict()['pre_checkout_query']['from']['id']
-    user = TGUser.objects.get(external_id=chat_id)
-
     query_id = update.to_dict()['pre_checkout_query']['id']
     context.bot.answer_pre_checkout_query(
         pre_checkout_query_id=query_id, 
@@ -180,61 +178,13 @@ def pre_checkout_handler(update:Update, context:CallbackContext):
 def text_handler(update:Update, context:CallbackContext):
     """
         Функция обработки различного текста от пользователя
-    """
-
+    """ 
     user = user_get_by_update(update)
-
-    if user.is_in_payment:
-        user_message = update.message.text
-        try:
-            amt = int(user_message)
-            if amt >= 0:
-                context.bot.send_message(
-                    chat_id=user.external_id,
-                    text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
-                    parse_mode=ParseMode.HTML
-                ) 
-                
-                context.bot.send_invoice(
-                    chat_id=user.external_id,
-                    title='CAN Sentiment Analysis',
-                    description=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
-                    payload=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
-                    provider_token=settings.PROVIDER_TOKEN,
-                    currency='RUB',
-                    prices=[
-                        LabeledPrice(
-                            label='Пополнение',
-                            amount=int(f'{amt}00')
-                        )
-                    ]
-                )
-
-            else:
-                user.is_in_payment = False
-                user.save()
-                context.bot.send_message(
-                    chat_id=user.external_id,
-                    text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>1000₽</b></i>.',
-                    parse_mode=ParseMode.HTML
-                ) 
-        except Exception as e:
-            print(e)
-
-            user.is_in_payment = False
-            user.save()
-            context.bot.send_message(
-                chat_id=user.external_id,
-                text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, так как вы ввели некорректное значение, либо сумма слишком большая.\n\n<b>Пример:</b>\n1000 или 3657 или 1001. Обычное целое число.',
-                parse_mode=ParseMode.HTML
-            )
-
-    else:
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text='😵 Мои создатель пока не научили меня отвечать на такие сообщения. ',
-                parse_mode=ParseMode.HTML
-            )
+    context.bot.send_message(
+            chat_id=user.external_id,
+            text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
+            parse_mode=ParseMode.HTML
+    )
 
 @log_errors
 def balance_add_command_handler(update:Update, context:CallbackContext):
@@ -250,7 +200,67 @@ def balance_add_command_handler(update:Update, context:CallbackContext):
         text='🤑 Введите сумму пополения:\n\n*миниамальная сумма пополнения - <i><b>1000₽</b></i>',
         parse_mode=ParseMode.HTML
     )
+
+    return 0
+
+@log_errors
+def update_balance_command_handler(update:Update, context:CallbackContext):
+    """
+        Функция обновления баланса
+    """
+    user = user_get_by_update(update)
     
+    user_message = update.message.text
+   
+    if 'cancel' in user_message:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🧬 Вы успешно отменили текущую операцию.',
+            parse_mode=ParseMode.HTML,
+        )
+        ConversationHandler.END
+
+    try:
+        amt = int(user_message)
+        if amt >= 0:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
+                parse_mode=ParseMode.HTML
+            ) 
+            
+            context.bot.send_invoice(
+                chat_id=user.external_id,
+                title='CAN Sentiment Analysis',
+                description=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
+                payload=f'Пополнение баланса пользователя {user.username} на сумму {amt}₽',
+                provider_token=settings.PROVIDER_TOKEN,
+                currency='RUB',
+                prices=[
+                    LabeledPrice(
+                        label='Пополнение',
+                        amount=int(f'{amt}00')
+                    )
+                ]
+            )
+
+            return ConversationHandler.END
+
+        else:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>1000₽</b></i>.\nВведите другое значение.',
+                parse_mode=ParseMode.HTML
+            ) 
+ 
+    except Exception as e:
+        print(e)
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, так как вы ввели некорректное значение, либо сумма слишком большая.\n\n<b>Пример:</b>\n1000 или 3657 или 1001. Обычное целое число.',
+            parse_mode=ParseMode.HTML
+        )
+
 @log_errors
 def balance_info(update:Update, context:CallbackContext):
     """
@@ -260,7 +270,7 @@ def balance_info(update:Update, context:CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'Уважаемый {user.name}, на сегодняшний день баланс вашего счета составляет <i><b>{user.balance}₽</b></i>',
+        text=f'Уважаемый <b>{user.name}</b>, на сегодняшний день баланс вашего счета составляет <i><b>{user.balance}₽</b></i>',
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
@@ -284,7 +294,7 @@ def demo_report_handler(update: Update, context: CallbackContext):
     )
 
     demo_data = {
-        "достоинства": {
+        "good_points": {
             "Приятный запах": {
                 "examples": [
                     "Экономно, хороший шампунь, приятный запах!",
@@ -375,7 +385,7 @@ def demo_report_handler(update: Update, context: CallbackContext):
                 "mean_rate": 5.0
             },
         },
-        "недостатки": {
+        "bad_points": {
             "Коробка мокрая": {
                 "examples": [
                     "пришёл шампунь, упакован хорошо, но вытек шампунь, вся коробка мокрая."
@@ -457,8 +467,124 @@ def ozon_report_handler(update: Update, context: CallbackContext):
         ]),
     )
 
+@log_errors
+def start_analize_conversation(update: Update, context: CallbackContext):
+    """
+        Функция начала разговора с пользователем для получения от него ссылки на анализ товара
+    """
+    user = user_get_by_update(update)
 
+    context.bot.send_message(
+        chat_id=user.external_id,
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. Просто пришлите ссылки и мы сделаем все за вас.',
+        parse_mode=ParseMode.HTML,
+    )
 
+    return 0
+
+@log_errors
+def analize(update: Update, context: CallbackContext):
+    """
+        Функция непосредственного сбора данных и проведения анализа
+    """
+
+    user = user_get_by_update(update)
+    txt = str(update.message.text).strip()
+    
+    if 'cancel' in txt:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🧬 Вы успешно отменили текущую операцию.',
+            parse_mode=ParseMode.HTML,
+        )
+        ConversationHandler.END
+
+    context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'👁 Начинаю сбор данных по вашей ссылке.',
+            parse_mode=ParseMode.HTML,
+    )
+    
+    # try:
+    name, image, data = parse_product(txt)
+    if data.shape[0] < 100:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🥲 К сожалению, мы не можем проанализировать данный товар, поскольку на нем слишком мало отзывов. ',
+            parse_mode=ParseMode.HTML,
+        )
+    else:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\n\nСписываю деньги и начинаю анализ...',
+            parse_mode=ParseMode.HTML,
+        )
+
+        if user.balance < 1000:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
+                parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                        InlineKeyboardButton('Пополнить счет 💰', callback_data='balance_add')
+                    ],
+
+                ]),
+            )
+        else:
+            user.balance -= 1000
+            user.save()
+
+            try:
+                out = settings.WRG.run(raw_data=data)
+
+                context.bot.send_message(
+                    chat_id=user.external_id,
+                    text='👁 Анализ прошел успешно... Готовим отчет...'
+                )
+
+                pdf = generate_report(out, image, name)
+
+                context.bot.send_document(
+                    chat_id=user.external_id,
+                    document=pdf,
+                    caption=f'<b>{user.name}</b>, ваш отчет готов.',
+                    filename='report.pdf',
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                        ],
+
+                    ]),
+                )
+
+            except:
+                user.balance += 1000
+                user.save()
+                context.bot.send_message(
+                    chat_id=user.external_id,
+                    text=f'🤒 <b>{user.name}</b>, произошла ошибка в работе алгоритма. Не волнуйтесь, ваши деньги возвращены, а мы уже решаем эту проблему.',
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                        ],
+
+                    ]),
+                )
+
+    # except Exception as e:
+    #     print(e)
+    #     context.bot.send_message(
+    #         chat_id=user.external_id,
+    #         text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже.',
+    #         parse_mode=ParseMode.HTML,
+    #     )
+
+    return ConversationHandler.END
 
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
@@ -481,7 +607,6 @@ class Command(BaseCommand):
             use_context = True,
         )
  
-
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
         updater.dispatcher.add_handler(start_handler)
@@ -511,14 +636,33 @@ class Command(BaseCommand):
         
         updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
         updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
-        updater.dispatcher.add_handler(CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'))
-        
-        updater.dispatcher.add_handler(CommandHandler('balance_add', balance_add_command_handler))    
         updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
-        
+
+        balance_add_conv_handler = ConversationHandler( 
+            entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
+            states={
+               0: [MessageHandler(Filters.text, update_balance_command_handler)],
+            },
+            
+            fallbacks=[],
+        )
+
+        updater.dispatcher.add_handler(balance_add_conv_handler)
+
+        ## обработчик общения с пользователем по поводу анализа        
+        analyze_conv_handler = ConversationHandler( 
+            entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
+            states={
+               0: [MessageHandler(Filters.text, analize)],
+            },
+            
+            fallbacks=[],
+        )
+
+        updater.dispatcher.add_handler(analyze_conv_handler)
+
         ## обработчик текста, после него нельзя добавлять обработчики
         updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))
-
         updater.dispatcher.add_handler(TypeHandler(Update, payment_confirmation_hanlder)) 
 
         #3 - запустить бесконечную обработку входящих сообщений

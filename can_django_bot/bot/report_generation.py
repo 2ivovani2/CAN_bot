@@ -10,8 +10,8 @@ def generate_report(data:dict={}, image_link:str=None, product_name:str=None):
     html_message = render_to_string('report.html', {
         'product_name': product_name,
         'image_link': image_link,
-        'positive':data['достоинства'].items(),
-        'negative':data['недостатки'].items(),
+        'positive':data['good_points'].items(),
+        'negative':data['bad_points'].items(),
 
     })
     
