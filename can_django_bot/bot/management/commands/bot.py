@@ -200,7 +200,7 @@ def balance_add_command_handler(update:Update, context:CallbackContext):
     
     context.bot.send_message(
         chat_id=user.external_id,
-        text='🤑 Введите сумму пополения:\n\n*миниамальная сумма пополнения - <i><b>1000₽</b></i>',
+        text='🤑 Введите сумму пополения:\n\n*минимальная сумма пополнения - <i><b>1000₽</b></i>',
         parse_mode=ParseMode.HTML
     )
 
@@ -221,8 +221,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
             text=f'🧬 Вы успешно отменили текущую операцию.',
             parse_mode=ParseMode.HTML,
         )
-        ConversationHandler.END
-        return
+        return ConversationHandler.END
 
     try:
         amt = int(user_message)
@@ -264,6 +263,8 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
             text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, так как вы ввели некорректное значение, либо сумма слишком большая.\n\n<b>Пример:</b>\n1000 или 3657 или 1001. Обычное целое число.',
             parse_mode=ParseMode.HTML
         )
+
+        return ConversationHandler.END
 
 @log_errors
 def balance_info(update:Update, context:CallbackContext):
@@ -458,7 +459,7 @@ def ozon_report_handler(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik и мы сделаем отчет специально под вас за ту же стоимость.',
+        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik.\nМы сделаем отчет специально под вас за ту же стоимость.',
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
@@ -480,7 +481,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \nПросто пришлите ссылки и мы сделаем все за вас.',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \nПросто пришлите ссылку и мы сделаем все за вас.',
         parse_mode=ParseMode.HTML,
     )
 
@@ -501,11 +502,11 @@ def analize(update: Update, context: CallbackContext):
             text=f'🧬 Вы успешно отменили текущую операцию.',
             parse_mode=ParseMode.HTML,
         )
-        ConversationHandler.END
+        return ConversationHandler.END
 
     context.bot.send_message(
             chat_id=user.external_id,
-            text=f'👁 Начинаю сбор данных по вашей ссылке.',
+            text=f'👁 Начинаю сбор данных по вашей ссылке...',
             parse_mode=ParseMode.HTML,
     )
     
@@ -520,7 +521,7 @@ def analize(update: Update, context: CallbackContext):
         else:
             context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\n\nСписываю деньги и начинаю анализ...',
+                text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nСписываю деньги и начинаю анализ...',
                 parse_mode=ParseMode.HTML,
             )
 
@@ -546,7 +547,7 @@ def analize(update: Update, context: CallbackContext):
 
                     context.bot.send_message(
                         chat_id=user.external_id,
-                        text='🪛 Анализ прошел успешно... Готовим отчет...'
+                        text='🪛 Анализ прошел успешно... \nГотовим отчет...'
                     )
 
                     pdf = generate_report(out, image, name)
@@ -584,7 +585,7 @@ def analize(update: Update, context: CallbackContext):
         print(e)
         context.bot.send_message(
             chat_id=user.external_id,
-            text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже. \n\n<b>Описание ошибки:</b>\n{e}',
+            text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже.',
             parse_mode=ParseMode.HTML,
         )
 

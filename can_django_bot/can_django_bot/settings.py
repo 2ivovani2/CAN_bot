@@ -148,7 +148,7 @@ STATIC_URL = '/static/'
 
 # Настройки бота
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
-PROVIDER_TOKEN = '381764678:TEST:32365'
+PROVIDER_TOKEN = '390540012:LIVE:21580'
 
 COMMANDS = {
     '/start' : 'Запуск бота',
@@ -158,7 +158,8 @@ COMMANDS = {
     '/ozon': 'Анализ товаров на Ozon',
     '/balance':'Информация о балансе',
     '/balance_add':'Пополнить баланс',
-    '/demo_report':'Посмотреть демо отчет'
+    '/demo_report':'Посмотреть демо отчет',
+    '/cancel':'Отменить текущую операцию'
 }
 
 COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items()])
