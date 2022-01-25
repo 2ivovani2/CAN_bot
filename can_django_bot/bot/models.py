@@ -25,11 +25,6 @@ class TGUser(models.Model):
         verbose_name='Полное имя пользователя', 
     )
 
-    is_in_payment = models.BooleanField(
-        null=False,
-        default=False
-    )
-
 
     def __str__(self):
         return f"#{self.external_id} {self.name}"

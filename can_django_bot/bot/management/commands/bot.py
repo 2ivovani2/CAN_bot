@@ -1,3 +1,4 @@
+from distutils.command.clean import clean
 from email.mime import image
 from typing import Pattern
 from django.core.management.base import BaseCommand
@@ -22,7 +23,7 @@ def log_errors(f):
             return f(*args, **kwargs)
         
         except Exception as e:
-            error_message = f"Произошла ошибка {e}"
+            error_message = f"Произошла ошибка в log_errors {e}"
             print(error_message)
             raise e
 
@@ -225,7 +226,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
 
     try:
         amt = int(user_message)
-        if amt >= 0:
+        if amt >= 1000:
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
@@ -671,5 +672,5 @@ class Command(BaseCommand):
         updater.dispatcher.add_handler(TypeHandler(Update, payment_confirmation_hanlder)) 
 
         #3 - запустить бесконечную обработку входящих сообщений
-        updater.start_polling()
+        updater.start_polling(clean=True)
         updater.idle()

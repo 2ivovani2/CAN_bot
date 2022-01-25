@@ -16,8 +16,6 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.crawler import CrawlerRunner
 from twisted.internet import reactor
 
-
-
 import pandas as pd
 
 
@@ -43,9 +41,12 @@ class BaseSpider(scrapy.Spider):
 class WildberriesCommentsSpider(BaseSpider):
     name = "wb_comments"
 
+    def __init__(self, good_url, *args, **kwargs):
+        super(WildberriesCommentsSpider, self).__init__(*args, **kwargs)
+        self.good_url = good_url
+
     def start_requests(self):
-        global good_url
-        yield scrapy.Request(good_url, self.parse_good)
+        yield scrapy.Request(self.good_url, self.parse_good)
 
 
     def parse_good(self, response):
@@ -72,7 +73,7 @@ class WildberriesCommentsSpider(BaseSpider):
         feedbacks_count = 0
 
         products_data_js = response.xpath('//script[contains(., "wb.spa.init")]/text()').get()
-        #print(products_data_js)
+        
         products_data_js = re.sub('\n', '', products_data_js)
         products_data_js = re.sub(r'\s{2,}', '', products_data_js)
 
@@ -114,18 +115,16 @@ class WildberriesCommentsSpider(BaseSpider):
 
 
 def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
-    global good_url
-    good_url = link
-
     filename = save_filename + str(uuid.uuid4()) + '.json'
 
     process = CrawlerRunner(settings={
         "FEEDS": {
             f"{filename}": {"format": "json"},
+            
         },
     })
 
-    process.crawl(WildberriesCommentsSpider)
+    process.crawl(WildberriesCommentsSpider, good_url=link)
     d = process.join()
     d.addBoth(lambda _: reactor.stop())
     reactor.run()
@@ -140,4 +139,3 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
 
     os.remove(filename)
     return name, photo, data
-

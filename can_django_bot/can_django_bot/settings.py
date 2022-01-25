@@ -9,33 +9,16 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 from nn_models.ru_sentiment_extraction import RUSentimentExtractor
 from nn_models.wordnet import WordNetReviewGenerator
 
-import json
-import math
-import os
-from collections import Counter
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.model_selection import train_test_split as tts
-from sklearn.decomposition import PCA
-
-import nltk
-from nltk.tokenize import sent_tokenize, word_tokenize
 from navec import Navec
 import catboost
-from pymystem3 import Mystem
-import pymorphy2
 
-from typing import Optional, Any
 
-from toolz import pipe
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
@@ -48,10 +31,14 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 SECRET_KEY = '-f8vgnwf&!dnhtu1ll*iy29p840eytcx3$z0fq@)h=8j@7lv+*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru']
+ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru','localhost']
 
+if DEBUG:
+    ACTIVE_HOST = 'http://127.0.0.1:8000'
+else:
+    ACTIVE_HOST = 'bot.canb2b.ru'
 
 # Application definition
 
@@ -143,7 +130,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = 'bot/static/'
+STATIC_ROOT = 'bot/static'
 
 
 # Настройки бота
