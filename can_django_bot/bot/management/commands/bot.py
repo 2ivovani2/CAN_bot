@@ -109,7 +109,9 @@ def help_command_handler(update:Update, context:CallbackContext):
                 InlineKeyboardButton('Отчет WB 📊', callback_data='wb_report'),
                 InlineKeyboardButton('Отчет OZON 📊', callback_data='ozon_report')
             ],
-
+            [
+                InlineKeyboardButton('Задать вопрос ❓', url='https://t.me/i_vovani'),
+            ]
         ]),
         parse_mode = ParseMode.HTML
     )
@@ -226,7 +228,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
 
     try:
         amt = int(user_message)
-        if amt >= 1000:
+        if amt >= settings.ONE_REVIEW_PRICE:
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
@@ -253,7 +255,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
         else:
             context.bot.send_message(
                 chat_id=user.external_id,
-                text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>1000₽</b></i>.\nВведите другое значение.',
+                text=f'😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>.\nВведите другое значение.',
                 parse_mode=ParseMode.HTML
             ) 
  
@@ -467,7 +469,8 @@ def ozon_report_handler(update: Update, context: CallbackContext):
                 InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
             ],
             [
-                InlineKeyboardButton('Написать 🗣', url='https://t.me/i_vovani'),
+                InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
+                InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
             ],
 
         ]),
@@ -526,7 +529,7 @@ def analize(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
             )
 
-            if user.balance < 1000:
+            if user.balance < settings.ONE_REVIEW_PRICE:
                 context.bot.send_message(
                     chat_id=user.external_id,
                     text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
@@ -540,7 +543,7 @@ def analize(update: Update, context: CallbackContext):
                     ]),
                 )
             else:
-                user.balance -= 1000
+                user.balance -= settings.ONE_REVIEW_PRICE
                 user.save()
 
                 try:
@@ -578,6 +581,10 @@ def analize(update: Update, context: CallbackContext):
                             [
                                 InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
                             ],
+                            [
+                                InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
+                                InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
+                            ],
 
                         ]),
                     )
@@ -586,8 +593,14 @@ def analize(update: Update, context: CallbackContext):
         print(e)
         context.bot.send_message(
             chat_id=user.external_id,
-            text=f'🥺 Произошла техническая ошибка, пожалуйста, попробуйте позже.',
+            text=f'🥺 Произошла либо техническая ошибка, либо некорректная ссылка, пожалуйста, попробуйте еще раз.\n\nЕсли проблема не ушла, воспользуйтесь кнопками ниже для уведомления администраторов.',
             parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
+                    InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
+                ],
+            ])
         )
 
     return ConversationHandler.END
@@ -659,7 +672,7 @@ class Command(BaseCommand):
         analyze_conv_handler = ConversationHandler( 
             entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
             states={
-               0: [MessageHandler(Filters.text, analize)],
+               0: [MessageHandler(Filters.regex('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
             },
             
             fallbacks=[],

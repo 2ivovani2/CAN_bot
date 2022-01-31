@@ -30,7 +30,7 @@
         <h1>Информация о конфиге</h1>
         
         <p>
-            В emb_model лежит:
+            Emb_model есть?:
         </p>
         
         <hr>
@@ -53,6 +53,18 @@
             {{sent_extractor}}
         <hr>
         
-        {{data}}
+        <h1>Тест парсера</h1>
+        <form action="/" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-8">
+                    <input name="link" style="width: 100%; height: 100%;" type="text" class="form-control" placeholder="WB link">
+                </div>
+                <div class="col-4">
+                    <button class="btn btn-primary" style="width:100%;" type="submit">Отправить</button>
+                </div>
+            </div>
+        </form>
+
     </body>
 </html>

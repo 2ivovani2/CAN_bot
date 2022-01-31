@@ -19,7 +19,6 @@ from navec import Navec
 import catboost
 
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
@@ -34,11 +33,6 @@ SECRET_KEY = '-f8vgnwf&!dnhtu1ll*iy29p840eytcx3$z0fq@)h=8j@7lv+*'
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru','localhost']
-
-if DEBUG:
-    ACTIVE_HOST = 'http://127.0.0.1:8000'
-else:
-    ACTIVE_HOST = 'bot.canb2b.ru'
 
 # Application definition
 
@@ -138,6 +132,8 @@ STATIC_ROOT = 'bot/static'
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
 PROVIDER_TOKEN = '390540012:LIVE:21580'
 
+ONE_REVIEW_PRICE = 1500
+
 COMMANDS = {
     '/start' : 'Запуск бота',
     '/help': 'Узнать о возможностях бота',
@@ -154,7 +150,7 @@ COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items
 
 # Настройки моделей машинного обучения
 
-print('Configing ML models ✌🏻')
+print('Конфигурирую ML модельки ✌🏻')
 path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
 EMB_MODEL = Navec.load(path)
 

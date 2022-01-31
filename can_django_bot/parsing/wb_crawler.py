@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import re
+import sys
 from typing import Tuple
 import requests
 import uuid
@@ -12,7 +13,6 @@ from envparse import env
 
 import scrapy
 from scrapy.exceptions import CloseSpider
-from scrapy.crawler import CrawlerProcess
 from scrapy.crawler import CrawlerRunner
 from twisted.internet import reactor
 
@@ -45,9 +45,11 @@ class WildberriesCommentsSpider(BaseSpider):
         super(WildberriesCommentsSpider, self).__init__(*args, **kwargs)
         self.good_url = good_url
 
+        self.photo = None
+        self.product_name = None
+
     def start_requests(self):
         yield scrapy.Request(self.good_url, self.parse_good)
-
 
     def parse_good(self, response):
         imt_id, feedbacks_count = self.load_product_info(response)
@@ -67,8 +69,9 @@ class WildberriesCommentsSpider(BaseSpider):
 
             skip += step
 
+        yield {'name':self.product_name, 'photo':self.photo}
+
     def load_product_info(self, response):
-        global photo, name
         imt_id = None
         feedbacks_count = 0
 
@@ -92,10 +95,10 @@ class WildberriesCommentsSpider(BaseSpider):
             if 'ssrModel' in evaled_data.keys():
                 imt_id = evaled_data['ssrModel']['product']['imtId']
                 feedbacks_count = evaled_data['ssrModel']['product']['feedbacks']
-                name = evaled_data['ssrModel']['product']['goodsName']
+                self.product_name = evaled_data['ssrModel']['product']['goodsName']
 
             if 'items' in evaled_data2.keys():
-                photo = evaled_data2['items'][4]['attributesDictionary']['content']
+                self.photo = evaled_data2['items'][4]['attributesDictionary']['content']
 
 
         return imt_id, feedbacks_count
@@ -114,23 +117,35 @@ class WildberriesCommentsSpider(BaseSpider):
             }
 
 
-def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
-    filename = save_filename + str(uuid.uuid4()) + '.json'
 
-    process = CrawlerRunner(settings={
+from multiprocessing import Queue, Process
+
+def f(q, filename, link):
+    runner = CrawlerRunner(settings={
         "FEEDS": {
             f"{filename}": {"format": "json"},
             
         },
     })
+    deferred = runner.crawl(WildberriesCommentsSpider, good_url=link)
+    deferred.addBoth(lambda _: reactor.stop())
+    reactor.run(installSignalHandlers=False)
+    q.put(None)
 
-    process.crawl(WildberriesCommentsSpider, good_url=link)
-    d = process.join()
-    d.addBoth(lambda _: reactor.stop())
-    reactor.run()
 
-    with open(filename) as data_json:
+def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
+    filename = save_filename + str(uuid.uuid4()) + '.json'
+
+    q = Queue()
+    p = Process(target=f, args=(q, filename, link))
+    p.start()
+    p.join()
+
+
+    with open(f'./{filename}') as data_json:
         data = json.loads(data_json.read())
+        name, photo = data[0]['name'], data[0]['photo']     
+        data = data[1:]
         data_json.close()
 
     data = pd.DataFrame(data)
