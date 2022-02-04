@@ -14,3 +14,4 @@ toolz
 pdfkit
 dukpy
 scrapy
+lxml

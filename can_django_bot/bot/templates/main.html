@@ -27,44 +27,7 @@
 
     </head>
     <body>
-        <h1>Информация о конфиге</h1>
-        
-        <p>
-            Emb_model есть?:
-        </p>
-        
-        <hr>
-            {{emb}}
-        <hr>
-        
-        <p>
-            В wordnet лежит:
-        </p>
-
-        <hr>
-            {{wordnet}}
-        <hr>
-
-        <p>
-            В sentiment_extractor лежит:
-        </p>
-
-        <hr>
-            {{sent_extractor}}
-        <hr>
-        
-        <h1>Тест парсера</h1>
-        <form action="/" method="post">
-            {% csrf_token %}
-            <div class="row">
-                <div class="col-8">
-                    <input name="link" style="width: 100%; height: 100%;" type="text" class="form-control" placeholder="WB link">
-                </div>
-                <div class="col-4">
-                    <button class="btn btn-primary" style="width:100%;" type="submit">Отправить</button>
-                </div>
-            </div>
-        </form>
-
+        <h1 class="mt-4">CANb2b приветствует вас</h1>
+        <a class="btn btn-primary mt-2" href="/admin"> Admin panel 👻</a>
     </body>
 </html>

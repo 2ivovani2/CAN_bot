@@ -5,7 +5,6 @@ import numpy as np
 
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
-from navec import Navec
 import catboost
 from pymystem3 import Mystem
 import pymorphy2
@@ -63,13 +62,24 @@ class WordNetReviewGenerator:
             end_data = {}
             garbage = {}
 
-            if len(good_cls) < 10:
-                por = 0
+            if self.raw_data.shape[0] <= 100:
+                lower_por = 0
+                upper_por = 5
             elif t == 'pos':
-                por = 2
+                if self.raw_data.shape[0] > 100 and self.raw_data.shape[0] <= 1500:
+                    lower_por = 2
+                    upper_por = 5
+                elif self.raw_data.shape[0] > 1500:
+                    lower_por = 3
+                    upper_por = 10
             else:
-                por = 0
-
+                if self.raw_data.shape[0] > 100 and self.raw_data.shape[0] <= 1500:
+                    lower_por = 0
+                    upper_por = 3
+                elif self.raw_data.shape[0] > 1500:
+                    lower_por = 2
+                    upper_por = 8
+                
             for w in keywords:        
                 rate = []
                 vals = []
@@ -87,7 +97,7 @@ class WordNetReviewGenerator:
                                     vals.append(sent)
 
                 
-                if len(vals) > por:
+                if len(vals) > lower_por and len(vals) < upper_por:
                     vals = vals[:2]
                     rate = rate[:2] 
 

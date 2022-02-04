@@ -117,10 +117,15 @@ class WildberriesCommentsSpider(BaseSpider):
             }
 
 
-
 from multiprocessing import Queue, Process
 
-def f(q, filename, link):
+def f(q:Queue, filename:str, link:str) -> None:
+    """
+        Функция, отвечающая за парсинг одного товара
+        @q:Queue - очередь, в которую будет добавляться процесс
+        @filename:str - имя файла, куда будут сохраняться данные
+        @link:str - ссылка на товар Wildberries
+    """
     runner = CrawlerRunner(settings={
         "FEEDS": {
             f"{filename}": {"format": "json"},
@@ -132,15 +137,20 @@ def f(q, filename, link):
     reactor.run(installSignalHandlers=False)
     q.put(None)
 
+    return None
 
 def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
+    '''
+        Функция, отвечающая за создание нового парс процесса и добавление его в очередь
+        @link:str - ссылка на товар wb
+        @filename:str - название файла, в который будут сохраняться данные scrapy (его передавать не надо)
+    '''
     filename = save_filename + str(uuid.uuid4()) + '.json'
 
     q = Queue()
     p = Process(target=f, args=(q, filename, link))
     p.start()
     p.join()
-
 
     with open(f'./{filename}') as data_json:
         data = json.loads(data_json.read())

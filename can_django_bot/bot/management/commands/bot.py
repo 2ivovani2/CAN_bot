@@ -1,8 +1,12 @@
+from cmath import log
 from distutils.command.clean import clean
 from email.mime import image
-from typing import Pattern
+import re
+import pandas as pd
 from django.core.management.base import BaseCommand
 from django.conf import settings
+
+from random import choice
 
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, LabeledPrice, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, ConversationHandler, TypeHandler
@@ -12,6 +16,7 @@ from bot.models import *
 from bot.report_generation import generate_report
 
 from parsing.wb_crawler import parse_product
+from parsing.wb_category_crawler import parse_product_category
 
 def log_errors(f):
     """
@@ -100,17 +105,26 @@ def help_command_handler(update:Update, context:CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'📊 <b>Основное</b>:\nЭтот телеграм бот поможет собрать данные отзывов на товары на маркетплейсах и проанализировать их. Вы будете знать о достоинствах и недостатках ваших товаров или товарах ваших конкуретов. Посмотрите демо-отчет и убедитесь в качестве работы бота самостоятельно 😮‍💨\n\n💻 <b>Доступные команды</b>:\n{settings.COMMANDS_STRING}\n\n💸 <b>Стоимость услуг:</b>\nСтоимость полного анализа одной карточки товара равна <i><b>1000₽</b></i>, но чем больше товаров вы будете анализировать, тем меньше будет стоимость.\n\n👁 <b>Принцип работы</b>:\nВы пополняете баланс -> Выбираете необходимую услугу -> Бот собирает данные, анализирует -> Конечный отчет в формате PDF\n\n📯 <b>Другое</b>:\nЕсли вам необходимо проанализировать тексовые данные, не относящиеся к тематике маркетплейсов, то напишите @i_vovani или @fathutnik и мы проанализируем их конкретно под вас.',
+        text=f'''
+        📊 <b>Основное</b>:\nЭтот телеграм бот поможет собрать данные отзывов на товары на маркетплейсах и проанализировать их. Вы будете знать о достоинствах и недостатках ваших товаров или товарах ваших конкуретов. Посмотрите демо-отчет и убедитесь в качестве работы бота самостоятельно 😮‍💨
+         \n\n💻 <b>Доступные команды</b>:\n{settings.COMMANDS_STRING}
+         \n\n💸 <b>Стоимость услуг</b>:\nСтоимость полного анализа одной карточки товара равна <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>, но чем больше товаров вы будете анализировать, тем меньше будет стоимость. Стоимость анализа ниши(категории) равна: <i><b>{settings.CATEGORY_REVIEW_PRICE}₽</b></i>
+         \n\n👁 <b>Принцип работы</b>:\nВы пополняете баланс -> Выбираете необходимую услугу -> Бот собирает данные, анализирует -> Конечный отчет в формате PDF
+         \n\n📯 <b>Другое</b>:\nЕсли вам необходимо проанализировать тексовые данные, не относящиеся к тематике маркетплейсов, то напишите @i_vovani или @fathutnik и мы проанализируем их конкретно под вас.
+         \n\n🐈‍⬛ <b>Возврат</b>:\nЕсли возникли какие-либо вопросы по работе алгоритма и вы хотите сделать возврат средств, то напишите админимтраторам и мы решим ваш вопрос.
+         ''',
+        
         reply_markup=InlineKeyboardMarkup([
             [
-                InlineKeyboardButton('Посмотреть демо отчет 🗂', callback_data='demo_report')
+                InlineKeyboardButton('Посмотреть демо отчет 🗂', callback_data='demo_report'),
+                InlineKeyboardButton('Задать вопрос ❓', url='https://t.me/i_vovani'),
             ],
             [
                 InlineKeyboardButton('Отчет WB 📊', callback_data='wb_report'),
                 InlineKeyboardButton('Отчет OZON 📊', callback_data='ozon_report')
             ],
             [
-                InlineKeyboardButton('Задать вопрос ❓', url='https://t.me/i_vovani'),
+                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
             ]
         ]),
         parse_mode = ParseMode.HTML
@@ -462,7 +476,7 @@ def ozon_report_handler(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik.\nМы сделаем отчет специально под вас за ту же стоимость.',
+        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik.\n\n❤️ Мы сделаем отчет специально под вас за ту же стоимость.',
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
@@ -485,7 +499,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \nПросто пришлите ссылку и мы сделаем все за вас.',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"<Опция> <ссылка>"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, <b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
         parse_mode=ParseMode.HTML,
     )
 
@@ -494,11 +508,10 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 @log_errors
 def analize(update: Update, context: CallbackContext):
     """
-        Функция непосредственного сбора данных и проведения анализа
+        Функция агрегирования запроса пользователя на необходимую функцию
     """
-
     user = user_get_by_update(update)
-    txt = str(update.message.text).strip()
+    txt = str(update.message.text).strip().lower()
     
     if 'cancel' in txt:
         context.bot.send_message(
@@ -508,6 +521,78 @@ def analize(update: Update, context: CallbackContext):
         )
         return ConversationHandler.END
 
+    if 'кат' in txt:
+        try:
+            cat_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
+        except:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
+                parse_mode=ParseMode.HTML,
+            )
+            return ConversationHandler.END
+
+        try:
+            prod_links, title = parse_product_category(cat_link) 
+        except:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
+                parse_mode=ParseMode.HTML,
+            )
+            return ConversationHandler.END
+
+        end_df = pd.DataFrame({})
+        images = []
+        for link in prod_links:
+            try:
+                _, image, data = parse_product(link)
+                images.append(image)
+                end_df = pd.concat([end_df, data])
+            except:
+                continue
+
+        analize_df(update, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
+
+    elif 'тов' in txt:
+        try:
+            prod_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
+        except:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
+                parse_mode=ParseMode.HTML,
+            )
+            return ConversationHandler.END
+        
+        try:
+            name, image, data = parse_product(prod_link)
+        except:
+            context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
+                parse_mode=ParseMode.HTML,
+            )
+            return ConversationHandler.END
+
+        analize_df(update, context, name, image, data, settings.ONE_REVIEW_PRICE)
+
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🥺 Похоже, что вы ввели некорректную опцию в своем запросе. Посмотрите на примеры и попробуйте еще раз.',
+                parse_mode=ParseMode.HTML,
+            )
+        return ConversationHandler.END
+    
+@log_errors
+def analize_df(update: Update, context: CallbackContext, name:str, image:str, data:pd.DataFrame, price:int):
+    """
+        Функция проведения анализа одного товара
+    """
+
+    user = user_get_by_update(update)
+
     context.bot.send_message(
             chat_id=user.external_id,
             text=f'👁 Начинаю сбор данных по вашей ссылке...',
@@ -515,7 +600,6 @@ def analize(update: Update, context: CallbackContext):
     )
     
     try:
-        name, image, data = parse_product(txt)
         if data.shape[0] < 100:
             context.bot.send_message(
                 chat_id=user.external_id,
@@ -529,7 +613,7 @@ def analize(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
             )
 
-            if user.balance < settings.ONE_REVIEW_PRICE:
+            if user.balance < price:
                 context.bot.send_message(
                     chat_id=user.external_id,
                     text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
@@ -543,7 +627,7 @@ def analize(update: Update, context: CallbackContext):
                     ]),
                 )
             else:
-                user.balance -= settings.ONE_REVIEW_PRICE
+                user.balance -= price
                 user.save()
 
                 try:
@@ -571,7 +655,7 @@ def analize(update: Update, context: CallbackContext):
                     )
 
                 except:
-                    user.balance += 1000
+                    user.balance += price
                     user.save()
                     context.bot.send_message(
                         chat_id=user.external_id,
@@ -589,11 +673,12 @@ def analize(update: Update, context: CallbackContext):
                         ]),
                     )
 
+                    return ConversationHandler.END
     except Exception as e:
         print(e)
         context.bot.send_message(
             chat_id=user.external_id,
-            text=f'🥺 Произошла либо техническая ошибка, либо некорректная ссылка, пожалуйста, попробуйте еще раз.\n\nЕсли проблема не ушла, воспользуйтесь кнопками ниже для уведомления администраторов.',
+            text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
             parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup([
                 [
@@ -672,7 +757,7 @@ class Command(BaseCommand):
         analyze_conv_handler = ConversationHandler( 
             entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
             states={
-               0: [MessageHandler(Filters.regex('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
+               0: [MessageHandler(Filters.text, analize)],
             },
             
             fallbacks=[],
