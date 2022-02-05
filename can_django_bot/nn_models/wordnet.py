@@ -77,8 +77,8 @@ class WordNetReviewGenerator:
                     lower_por = 0
                     upper_por = 3
                 elif self.raw_data.shape[0] > 1500:
-                    lower_por = 2
-                    upper_por = 8
+                    lower_por = 1
+                    upper_por = 10
                 
             for w in keywords:        
                 rate = []

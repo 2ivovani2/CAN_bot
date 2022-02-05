@@ -499,7 +499,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"<Опция> <ссылка>"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, <b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:\n<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
         parse_mode=ParseMode.HTML,
     )
 
@@ -522,6 +522,12 @@ def analize(update: Update, context: CallbackContext):
         return ConversationHandler.END
 
     if 'кат' in txt:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'👁 Начинаю сбор данных по вашей ссылке...',
+            parse_mode=ParseMode.HTML,
+        )
+
         try:
             cat_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
         except:
@@ -530,7 +536,6 @@ def analize(update: Update, context: CallbackContext):
                 text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
                 parse_mode=ParseMode.HTML,
             )
-            return ConversationHandler.END
 
         try:
             prod_links, title = parse_product_category(cat_link) 
@@ -540,7 +545,12 @@ def analize(update: Update, context: CallbackContext):
                 text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
                 parse_mode=ParseMode.HTML,
             )
-            return ConversationHandler.END
+
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'',
+                parse_mode=ParseMode.HTML,
+            )
 
         end_df = pd.DataFrame({})
         images = []
@@ -555,6 +565,12 @@ def analize(update: Update, context: CallbackContext):
         analize_df(update, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
 
     elif 'тов' in txt:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'👁 Начинаю сбор данных по вашей ссылке...',
+            parse_mode=ParseMode.HTML,
+        )
+
         try:
             prod_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
         except:
@@ -563,7 +579,6 @@ def analize(update: Update, context: CallbackContext):
                 text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
                 parse_mode=ParseMode.HTML,
             )
-            return ConversationHandler.END
         
         try:
             name, image, data = parse_product(prod_link)
@@ -573,7 +588,6 @@ def analize(update: Update, context: CallbackContext):
                 text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
                 parse_mode=ParseMode.HTML,
             )
-            return ConversationHandler.END
 
         analize_df(update, context, name, image, data, settings.ONE_REVIEW_PRICE)
 
@@ -583,7 +597,8 @@ def analize(update: Update, context: CallbackContext):
                 text=f'🥺 Похоже, что вы ввели некорректную опцию в своем запросе. Посмотрите на примеры и попробуйте еще раз.',
                 parse_mode=ParseMode.HTML,
             )
-        return ConversationHandler.END
+    
+    return ConversationHandler.END
     
 @log_errors
 def analize_df(update: Update, context: CallbackContext, name:str, image:str, data:pd.DataFrame, price:int):
@@ -592,12 +607,6 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
     """
 
     user = user_get_by_update(update)
-
-    context.bot.send_message(
-            chat_id=user.external_id,
-            text=f'👁 Начинаю сбор данных по вашей ссылке...',
-            parse_mode=ParseMode.HTML,
-    )
     
     try:
         if data.shape[0] < 100:
