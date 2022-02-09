@@ -21,13 +21,28 @@
                 text-align: center;
                 padding: 0 5%;
                 width:100vw;
-                height:auto
+                height:100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            .btns_to_flex{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
             }
         </style>
 
     </head>
     <body>
-        <h1 class="mt-4">CANb2b приветствует вас</h1>
-        <a class="btn btn-primary mt-2" href="/admin"> Admin panel 👻</a>
+        <h1><b>CANB2B</b> приветствует вас!</h1>
+        <div class="row mt-2">
+                <a class="btn btn-primary" href="/admin" role="button"> Админка 👻</a>
+                <a class="btn btn-success mt-2" href="https://t.me/can_b2b_bot" target="blank" role="button"> CAN BOT 📸</a>
+        </div>
+        
     </body>
 </html>

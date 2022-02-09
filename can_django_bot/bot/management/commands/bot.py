@@ -499,7 +499,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:\n<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:\n<b>Собери данные по категории https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Нужно собрать даные по товару  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
         parse_mode=ParseMode.HTML,
     )
 
@@ -714,6 +714,17 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
 
     return ConversationHandler.END
 
+@log_errors
+def cancel_operation(update: Update, context: CallbackContext):
+    user = user_get_by_update(update)
+
+    context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🥲 Получено некорректное значение, пожалуйста, внимательно прочитайте описание операции, которую вы собираетесь выполнить и попробуйте еще раз.',
+                parse_mode=ParseMode.HTML,
+    )
+    return ConversationHandler.END
+
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
 
@@ -769,10 +780,12 @@ class Command(BaseCommand):
         balance_add_conv_handler = ConversationHandler( 
             entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
             states={
-               0: [MessageHandler(Filters.text, update_balance_command_handler)],
+               0: [MessageHandler(Filters.regex(r'[0-9]+'), update_balance_command_handler)],
             },
             
-            fallbacks=[],
+            fallbacks=[
+                MessageHandler(Filters.text & Filters.command, cancel_operation)
+            ],
         )
 
         updater.dispatcher.add_handler(balance_add_conv_handler)
@@ -781,10 +794,12 @@ class Command(BaseCommand):
         analyze_conv_handler = ConversationHandler( 
             entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
             states={
-               0: [MessageHandler(Filters.text, analize)],
+               0: [MessageHandler(Filters.regex(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
             },
             
-            fallbacks=[],
+            fallbacks=[
+                MessageHandler(Filters.text & Filters.command, cancel_operation)
+            ],
         )
 
         updater.dispatcher.add_handler(analyze_conv_handler)

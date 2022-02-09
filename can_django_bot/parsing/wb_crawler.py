@@ -167,6 +167,4 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
         return name, photo, data
     except:
         os.remove(filename)
-
-        print('Никита пидорас, парсер умер')
-        raise Exception('Никита пидорас, парсер умер')
+        raise Exception('Видимо, отзывов <=10')
