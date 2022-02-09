@@ -32,7 +32,7 @@ SECRET_KEY = '-f8vgnwf&!dnhtu1ll*iy29p840eytcx3$z0fq@)h=8j@7lv+*'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru','localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'bot.canb2b.ru', 'localhost', '94.139.252.35']
 
 # Application definition
 

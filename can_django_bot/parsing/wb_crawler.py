@@ -152,15 +152,21 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
     p.start()
     p.join()
 
-    with open(f'./{filename}') as data_json:
-        data = json.loads(data_json.read())
-        name, photo = data[0]['name'], data[0]['photo']     
-        data = data[1:]
-        data_json.close()
+    try:
+        with open(f'./{filename}') as data_json:
+            data = json.loads(data_json.read())
+            name, photo = data[0]['name'], data[0]['photo']     
+            data = data[1:]
+            data_json.close()
 
-    data = pd.DataFrame(data)
-    data.set_axis(['review', 'rate', 'created_at'], axis='columns', inplace=True)
-    data['review'] = data['review'].apply(lambda x: x.strip().replace('\n',''))
+        data = pd.DataFrame(data)
+        data.set_axis(['review', 'rate', 'created_at'], axis='columns', inplace=True)
+        data['review'] = data['review'].apply(lambda x: x.strip().replace('\n',''))
 
-    os.remove(filename)
-    return name, photo, data
+        os.remove(filename)
+        return name, photo, data
+    except:
+        os.remove(filename)
+
+        print('Никита пидорас, парсер умер')
+        raise Exception('Никита пидорас, парсер умер')

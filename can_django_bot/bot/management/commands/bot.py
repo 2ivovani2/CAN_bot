@@ -217,7 +217,7 @@ def balance_add_command_handler(update:Update, context:CallbackContext):
     
     context.bot.send_message(
         chat_id=user.external_id,
-        text='🤑 Введите сумму пополения:\n\n*минимальная сумма пополнения - <i><b>1000₽</b></i>',
+        text=f'🤑 Введите сумму пополения:\n\n*минимальная сумма пополнения - <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>',
         parse_mode=ParseMode.HTML
     )
 
@@ -476,7 +476,7 @@ def ozon_report_handler(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik.\n\n❤️ Мы сделаем отчет специально под вас за ту же стоимость.',
+        text='👀 <b>Мы становимся лучше для вас!</b>\nСбор данных с Ozon пока находится в разработке, но если у вас есть свои данные, то напишите @i_vovani или @fathutnik и мы сделаем отчет специально под вас за ту же стоимость.',
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup([
             [
@@ -546,15 +546,27 @@ def analize(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
             )
 
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text=f'',
-                parse_mode=ParseMode.HTML,
-            )
-
         end_df = pd.DataFrame({})
         images = []
-        for link in prod_links:
+        loading_emoji = ['😱', '🤫', '😮', '👻', '😑']
+
+        for index, link in enumerate(prod_links):
+            if (index + 1) == 10:
+                message_to_edit = context.bot.send_message(
+                    chat_id=user.external_id,
+                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>',
+                    parse_mode=ParseMode.HTML,
+            )
+
+            elif (index + 1) % 10 == 0:
+                context.bot.edit_message_text(
+                    chat_id=user.external_id,
+                    message_id=message_to_edit.message_id, 
+                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>',
+                    parse_mode=ParseMode.HTML,
+                )
+
+
             try:
                 _, image, data = parse_product(link)
                 images.append(image)
@@ -579,7 +591,7 @@ def analize(update: Update, context: CallbackContext):
                 text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
                 parse_mode=ParseMode.HTML,
             )
-        
+
         try:
             name, image, data = parse_product(prod_link)
         except:
@@ -588,6 +600,8 @@ def analize(update: Update, context: CallbackContext):
                 text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
                 parse_mode=ParseMode.HTML,
             )
+
+            return ConversationHandler.END
 
         analize_df(update, context, name, image, data, settings.ONE_REVIEW_PRICE)
 
@@ -616,7 +630,7 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
                 parse_mode=ParseMode.HTML,
             )
         else:
-            context.bot.send_message(
+            success_data_prepare_msg = context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nСписываю деньги и начинаю анализ...',
                 parse_mode=ParseMode.HTML,
@@ -642,8 +656,9 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
                 try:
                     out = settings.WRG.run(raw_data=data)
 
-                    context.bot.send_message(
+                    context.bot.edit_message_text(
                         chat_id=user.external_id,
+                        message_id=success_data_prepare_msg.message_id,
                         text='🪛 Анализ прошел успешно... \nГотовим отчет...'
                     )
 

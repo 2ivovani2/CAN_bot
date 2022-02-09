@@ -278,8 +278,8 @@ class WordNetReviewGenerator:
         self.data['prepared_review'] = self.data['review'].apply(self.remove_every)
         
         # разделим на позитивные и негативные по оценке отзывы
-        self.pos = sum([sent_tokenize(text) for text in list(self.data[self.data['rate'] > 3]['prepared_review'].values)],[])
-        self.neg = sum([sent_tokenize(text) for text in list(self.data[self.data['rate'] <= 3]['prepared_review'].values)],[])
+        self.pos = sum([sent_tokenize(text) for text in list(self.data[self.data['rate'] >= 3]['prepared_review'].values)],[])
+        self.neg = sum([sent_tokenize(text) for text in list(self.data[self.data['rate'] < 3]['prepared_review'].values)],[])
         
         return None
         
