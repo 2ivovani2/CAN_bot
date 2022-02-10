@@ -746,6 +746,39 @@ class Command(BaseCommand):
             use_context = True,
         )
  
+        ## обработчик общения с пользователем по поводу анализа        
+        analyze_conv_handler = ConversationHandler( 
+            entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
+            states={
+               0: [MessageHandler(Filters.regex(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
+            },
+            
+            fallbacks=[
+                MessageHandler((Filters.command | Filters.text), cancel_operation)
+            ],
+        )
+
+        updater.dispatcher.add_handler(analyze_conv_handler)
+
+        ## обработчики работы с балансом
+        
+        updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
+        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
+        updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
+
+        balance_add_conv_handler = ConversationHandler( 
+            entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
+            states={
+               0: [MessageHandler(Filters.regex(r'[0-9]+'), update_balance_command_handler)],
+            },
+            
+            fallbacks=[
+                MessageHandler((Filters.command | Filters.text), cancel_operation)
+            ],
+        )
+
+        updater.dispatcher.add_handler(balance_add_conv_handler)
+
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
         updater.dispatcher.add_handler(start_handler)
@@ -770,39 +803,6 @@ class Command(BaseCommand):
         ## обработчик  демо отчета
         updater.dispatcher.add_handler(CommandHandler('demo_report', demo_report_handler))
         updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_handler, pattern='demo_report'))
-
-        ## обработчики работы с балансом
-        
-        updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
-        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
-        updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
-
-        balance_add_conv_handler = ConversationHandler( 
-            entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
-            states={
-               0: [MessageHandler(Filters.regex(r'[0-9]+'), update_balance_command_handler)],
-            },
-            
-            fallbacks=[
-                MessageHandler(Filters.text & Filters.command, cancel_operation)
-            ],
-        )
-
-        updater.dispatcher.add_handler(balance_add_conv_handler)
-
-        ## обработчик общения с пользователем по поводу анализа        
-        analyze_conv_handler = ConversationHandler( 
-            entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
-            states={
-               0: [MessageHandler(Filters.regex(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
-            },
-            
-            fallbacks=[
-                MessageHandler(Filters.text & Filters.command, cancel_operation)
-            ],
-        )
-
-        updater.dispatcher.add_handler(analyze_conv_handler)
 
         ## обработчик текста, после него нельзя добавлять обработчики
         updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))
