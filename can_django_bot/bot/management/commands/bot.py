@@ -1,6 +1,3 @@
-from cmath import log
-from distutils.command.clean import clean
-from email.mime import image
 import re
 import pandas as pd
 from django.core.management.base import BaseCommand
@@ -15,8 +12,12 @@ from telegram.utils.request import Request
 from bot.models import *
 from bot.report_generation import generate_report
 
+from telegram.ext.dispatcher import run_async
+
 from parsing.wb_crawler import parse_product
 from parsing.wb_category_crawler import parse_product_category
+
+from nn_models.wordnet import WordNetReviewGenerator
 
 def log_errors(f):
     """
@@ -110,7 +111,7 @@ def help_command_handler(update:Update, context:CallbackContext):
          \n\n💻 <b>Доступные команды</b>:\n{settings.COMMANDS_STRING}
          \n\n💸 <b>Стоимость услуг</b>:\nСтоимость полного анализа одной карточки товара равна <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>, но чем больше товаров вы будете анализировать, тем меньше будет стоимость. Стоимость анализа ниши(категории) равна: <i><b>{settings.CATEGORY_REVIEW_PRICE}₽</b></i>
          \n\n👁 <b>Принцип работы</b>:\nВы пополняете баланс -> Выбираете необходимую услугу -> Бот собирает данные, анализирует -> Конечный отчет в формате PDF
-         \n\n📯 <b>Другое</b>:\nЕсли вам необходимо проанализировать тексовые данные, не относящиеся к тематике маркетплейсов, то напишите @i_vovani или @fathutnik и мы проанализируем их конкретно под вас.
+         \n\n📯 <b>Другое</b>:\nЕсли вам необходимо проанализировать текстовые данные, не относящиеся к тематике маркетплейсов, то напишите @i_vovani или @fathutnik и мы проанализируем их конкретно под вас.
          \n\n🐈‍⬛ <b>Возврат</b>:\nЕсли возникли какие-либо вопросы по работе алгоритма и вы хотите сделать возврат средств, то напишите админимтраторам и мы решим ваш вопрос.
          ''',
         
@@ -499,13 +500,14 @@ def start_analize_conversation(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:\n<b>Собери данные по категории https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Нужно собрать даные по товару  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
+        text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас.\n\n🕶 Примеры сообщения:\n<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b> ',
         parse_mode=ParseMode.HTML,
     )
 
     return 0
 
 @log_errors
+@run_async
 def analize(update: Update, context: CallbackContext):
     """
         Функция агрегирования запроса пользователя на необходимую функцию
@@ -551,14 +553,14 @@ def analize(update: Update, context: CallbackContext):
         loading_emoji = ['😱', '🤫', '😮', '👻', '😑']
 
         for index, link in enumerate(prod_links):
-            if (index + 1) == 10:
+            if (index + 1) == 1:
                 message_to_edit = context.bot.send_message(
                     chat_id=user.external_id,
                     text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>',
                     parse_mode=ParseMode.HTML,
             )
 
-            elif (index + 1) % 10 == 0:
+            else:
                 context.bot.edit_message_text(
                     chat_id=user.external_id,
                     message_id=message_to_edit.message_id, 
@@ -615,6 +617,7 @@ def analize(update: Update, context: CallbackContext):
     return ConversationHandler.END
     
 @log_errors
+@run_async
 def analize_df(update: Update, context: CallbackContext, name:str, image:str, data:pd.DataFrame, price:int):
     """
         Функция проведения анализа одного товара
@@ -654,7 +657,9 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
                 user.save()
 
                 try:
-                    out = settings.WRG.run(raw_data=data)
+                    wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL)
+                    out = wrg.run(raw_data=data)
+
 
                     context.bot.edit_message_text(
                         chat_id=user.external_id,

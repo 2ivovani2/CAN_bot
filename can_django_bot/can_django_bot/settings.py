@@ -159,7 +159,7 @@ extractor_clf = catboost.CatBoostClassifier()
 extractor_clf = extractor_clf.load_model('./nn_models/en_clf_model')
 
 wrg_clf = catboost.CatBoostClassifier()
-wrg_clf = wrg_clf.load_model('./nn_models/wordnet_classifier')
+WRG_CLF = wrg_clf.load_model('./nn_models/wordnet_classifier')
 
 EXTRACTOR = RUSentimentExtractor(vectorizer=EMB_MODEL, classifier=extractor_clf)
-WRG = WordNetReviewGenerator(clf=wrg_clf, extractor=EXTRACTOR, emb_model=EMB_MODEL)
+
