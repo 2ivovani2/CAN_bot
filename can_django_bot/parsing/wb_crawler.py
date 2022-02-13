@@ -2,7 +2,6 @@ import json
 import logging
 import math
 import re
-import sys
 from typing import Tuple
 import requests
 import uuid
@@ -117,29 +116,22 @@ class WildberriesCommentsSpider(BaseSpider):
             }
 
 
-from multiprocessing import Queue, Process
+from multiprocessing import Process
 
-def f(q:Queue, filename:str, link:str) -> None:
+def f(runner: CrawlerRunner, link:str) -> None:
     """
         Функция, отвечающая за парсинг одного товара
-        @q:Queue - очередь, в которую будет добавляться процесс
-        @filename:str - имя файла, куда будут сохраняться данные
+        @runner:CrawlerRunner - объект раннера
         @link:str - ссылка на товар Wildberries
     """
-    runner = CrawlerRunner(settings={
-        "FEEDS": {
-            f"{filename}": {"format": "json"},
-            
-        },
-    })
+    
     deferred = runner.crawl(WildberriesCommentsSpider, good_url=link)
     deferred.addBoth(lambda _: reactor.stop())
     reactor.run(installSignalHandlers=False)
-    q.put(None)
-
+    
     return None
 
-def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
+def parse_product(link:str, save_filename:str='data_') -> Tuple[str, str, pd.DataFrame]:
     '''
         Функция, отвечающая за создание нового парс процесса и добавление его в очередь
         @link:str - ссылка на товар wb
@@ -147,8 +139,14 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
     '''
     filename = save_filename + str(uuid.uuid4()) + '.json'
 
-    q = Queue()
-    p = Process(target=f, args=(q, filename, link))
+    runner = CrawlerRunner(settings={
+        "FEEDS": {
+            f"{filename}": {"format": "json"},
+            
+        },
+    })
+
+    p = Process(target=f, args=(runner, link))
     p.start()
     p.join()
 
@@ -165,6 +163,6 @@ def parse_product(link, save_filename='data_') -> Tuple[str, str, pd.DataFrame]:
 
         os.remove(filename)
         return name, photo, data
-    except:
+    except Exception as e:
         os.remove(filename)
-        raise Exception('Видимо, отзывов <=10')
+        raise Exception(f'Никита еблоид, парсер не спарсил. Ошибка: {e}')

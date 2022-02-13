@@ -550,13 +550,14 @@ def analize(update: Update, context: CallbackContext):
 
         end_df = pd.DataFrame({})
         images = []
-        loading_emoji = ['😱', '🤫', '😮', '👻', '😑']
+        loading_emoji = ['⏰', '⚙️', '🔪', '👻', '💣', '🔮']
 
         for index, link in enumerate(prod_links):
+            
             if (index + 1) == 1:
                 message_to_edit = context.bot.send_message(
                     chat_id=user.external_id,
-                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>',
+                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>. Собрано <b>{end_df.shape[0]}</b> отзывов.',
                     parse_mode=ParseMode.HTML,
             )
 
@@ -564,18 +565,19 @@ def analize(update: Update, context: CallbackContext):
                 context.bot.edit_message_text(
                     chat_id=user.external_id,
                     message_id=message_to_edit.message_id, 
-                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>',
+                    text=f'{choice(loading_emoji)} Процесс сбора завершен на <b>{(index + 1)}%</b>. Собрано <b>{end_df.shape[0]}</b> отзывов.',
                     parse_mode=ParseMode.HTML,
                 )
-
 
             try:
                 _, image, data = parse_product(link)
                 images.append(image)
                 end_df = pd.concat([end_df, data])
-            except:
+            except Exception as e:
+                print(e)
                 continue
-
+        print(f'start analysis for {user.username}')
+        
         analize_df(update, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
 
     elif 'тов' in txt:

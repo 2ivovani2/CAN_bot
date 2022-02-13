@@ -1,5 +1,4 @@
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 import pdfkit
 
 def generate_report(data:dict={}, image_link:str=None, product_name:str=None):
@@ -15,7 +14,6 @@ def generate_report(data:dict={}, image_link:str=None, product_name:str=None):
 
     })
     
-
     pdf = pdfkit.from_string(html_message, False, options={
         'encoding': "UTF-8",
     }) 
