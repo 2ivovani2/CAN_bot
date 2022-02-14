@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 
 from nn_models.ru_sentiment_extraction import RUSentimentExtractor
-from nn_models.wordnet import WordNetReviewGenerator
 
 from navec import Navec
 import catboost

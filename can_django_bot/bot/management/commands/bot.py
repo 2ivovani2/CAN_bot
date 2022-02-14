@@ -19,6 +19,9 @@ from parsing.wb_category_crawler import parse_product_category
 
 from nn_models.wordnet import WordNetReviewGenerator
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
 def log_errors(f):
     """
         Функция обработчик ошибок бота, выводящая все в консоль
@@ -29,8 +32,7 @@ def log_errors(f):
             return f(*args, **kwargs)
         
         except Exception as e:
-            error_message = f"Произошла ошибка в log_errors {e}"
-            print(error_message)
+            logging.error(f'{e} возникла в log_errors')
             raise e
 
     return inner
@@ -180,8 +182,9 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
                 text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
             )
 
-    except:
-        pass
+    except Exception as e:
+        logging.error(f'{e} возникла во время подтверждения платежа для {user.username}')
+        raise e
     
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
@@ -275,7 +278,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
             ) 
  
     except Exception as e:
-        print(e)
+        logging.error(f'{e} возникла во время получения значения для пополнения баланса пользователя {user.username}')
         context.bot.send_message(
             chat_id=user.external_id,
             text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, так как вы ввели некорректное значение, либо сумма слишком большая.\n\n<b>Пример:</b>\n1000 или 3657 или 1001. Обычное целое число.',
@@ -533,6 +536,7 @@ def analize(update: Update, context: CallbackContext):
         try:
             cat_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
         except:
+            logging.error(f'{e} возникла во время поиска ссылки на категорию для пользователя {user.username}')
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
@@ -542,6 +546,8 @@ def analize(update: Update, context: CallbackContext):
         try:
             prod_links, title = parse_product_category(cat_link) 
         except:
+            logging.error(f'{e} возникла во время парсинга ссылок на товары категории для пользователя {user.username}')
+            
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
@@ -574,9 +580,8 @@ def analize(update: Update, context: CallbackContext):
                 images.append(image)
                 end_df = pd.concat([end_df, data])
             except Exception as e:
-                print(e)
+                logging.error(f'{e} возникла во время сбора данных на товар из категории для пользователя {user.username}')
                 continue
-        print(f'start analysis for {user.username}')
         
         analize_df(update, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
 
@@ -590,6 +595,8 @@ def analize(update: Update, context: CallbackContext):
         try:
             prod_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
         except:
+            logging.error(f'{e} возникла во время поиска ссылки на товар для пользователя {user.username}')
+            
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'😓 Не могу найти ссылку в вашем сообщении, попробуйте еще раз.',
@@ -599,6 +606,8 @@ def analize(update: Update, context: CallbackContext):
         try:
             name, image, data = parse_product(prod_link)
         except:
+            logging.error(f'{e} возникла во время сбора данных на товар для пользователя {user.username}')
+
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
@@ -686,6 +695,8 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
                     )
 
                 except:
+                    logging.error(f'{e} возникла во время работы алгоритма и генерации репорта для пользователя {user.username}')
+            
                     user.balance += price
                     user.save()
                     context.bot.send_message(
@@ -706,7 +717,8 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
 
                     return ConversationHandler.END
     except Exception as e:
-        print(e)
+        logging.error(f'{e} возникла во время анализа датасета для пользователя {user.username}')
+            
         context.bot.send_message(
             chat_id=user.external_id,
             text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
@@ -738,6 +750,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         #1 - правильное подключение
         request = Request(
+            con_pool_size=20,
             connect_timeout = 1.0,
             read_timeout = 1.5
         )

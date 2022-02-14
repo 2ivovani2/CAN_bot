@@ -18,7 +18,8 @@ from twisted.internet import reactor
 import pandas as pd
 
 
-logger = logging.getLogger(__name__)
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 class BaseSpider(scrapy.Spider):
     def closed(self, reason):
@@ -34,7 +35,7 @@ class BaseSpider(scrapy.Spider):
                 callback_params[str(k_v[0])] = k_v[1]
 
         if callback_url is not None:
-            logger.info(f"Noticed callback_url in params, sending POST request to {callback_url}")
+            logging.info(f"Noticed callback_url in params, sending POST request to {callback_url}")
             requests.post(callback_url, data=callback_params)
 
 class WildberriesCommentsSpider(BaseSpider):
@@ -165,4 +166,5 @@ def parse_product(link:str, save_filename:str='data_') -> Tuple[str, str, pd.Dat
         return name, photo, data
     except Exception as e:
         os.remove(filename)
+        logging.error(f'Никита еблоид, парсер не спарсил. Ошибка: {e}')   
         raise Exception(f'Никита еблоид, парсер не спарсил. Ошибка: {e}')
