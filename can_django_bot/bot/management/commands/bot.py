@@ -183,7 +183,7 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
             )
 
     except Exception as e:
-        logging.error(f'{e} возникла во время подтверждения платежа для {user.username}')
+        logging.error(f'{e} возникла во время подтверждения платежа')
         raise e
     
 @log_errors
