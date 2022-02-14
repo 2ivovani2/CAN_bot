@@ -535,7 +535,7 @@ def analize(update: Update, context: CallbackContext):
 
         try:
             cat_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
-        except:
+        except Exception as e:
             logging.error(f'{e} возникла во время поиска ссылки на категорию для пользователя {user.username}')
             context.bot.send_message(
                 chat_id=user.external_id,
@@ -545,7 +545,7 @@ def analize(update: Update, context: CallbackContext):
 
         try:
             prod_links, title = parse_product_category(cat_link) 
-        except:
+        except Exception as e:
             logging.error(f'{e} возникла во время парсинга ссылок на товары категории для пользователя {user.username}')
             
             context.bot.send_message(
@@ -594,7 +594,7 @@ def analize(update: Update, context: CallbackContext):
 
         try:
             prod_link = re.search('((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)', txt).group(0)
-        except:
+        except Exception as e:
             logging.error(f'{e} возникла во время поиска ссылки на товар для пользователя {user.username}')
             
             context.bot.send_message(
@@ -605,7 +605,7 @@ def analize(update: Update, context: CallbackContext):
 
         try:
             name, image, data = parse_product(prod_link)
-        except:
+        except Exception as e:
             logging.error(f'{e} возникла во время сбора данных на товар для пользователя {user.username}')
 
             context.bot.send_message(
@@ -636,102 +636,88 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
 
     user = user_get_by_update(update)
     
-    try:
-        if data.shape[0] < 100:
+    
+    if data.shape[0] < 100:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🥲 К сожалению, мы не можем проанализировать данный товар, поскольку на нем слишком мало отзывов. ',
+            parse_mode=ParseMode.HTML,
+        )
+    else:
+        success_data_prepare_msg = context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nСписываю деньги и начинаю анализ...',
+            parse_mode=ParseMode.HTML,
+        )
+
+        if user.balance < price:
             context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🥲 К сожалению, мы не можем проанализировать данный товар, поскольку на нем слишком мало отзывов. ',
+                text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
                 parse_mode=ParseMode.HTML,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                        InlineKeyboardButton('Пополнить счет 💰', callback_data='balance_add')
+                    ],
+
+                ]),
             )
         else:
-            success_data_prepare_msg = context.bot.send_message(
-                chat_id=user.external_id,
-                text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nСписываю деньги и начинаю анализ...',
-                parse_mode=ParseMode.HTML,
-            )
+            user.balance -= price
+            user.save()
 
-            if user.balance < price:
-                context.bot.send_message(
+            try:
+                wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL)
+                out = wrg.run(raw_data=data)
+
+
+                context.bot.edit_message_text(
                     chat_id=user.external_id,
-                    text=f'🤒 <b>{user.name}</b>, на вашем счете недостаточно средств.\n\nЧтобы продолжить, необходимо пополнить баланс.',
+                    message_id=success_data_prepare_msg.message_id,
+                    text='🪛 Анализ прошел успешно... \nГотовим отчет...'
+                )
+
+                pdf = generate_report(out, image, name)
+
+                context.bot.send_document(
+                    chat_id=user.external_id,
+                    document=pdf,
+                    caption=f'<b>{user.name}</b>, ваш отчет готов.',
+                    filename='report.pdf',
                     parse_mode=ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup([
                         [
                             InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                            InlineKeyboardButton('Пополнить счет 💰', callback_data='balance_add')
                         ],
 
                     ]),
                 )
-            else:
-                user.balance -= price
+
+            except Exception as e:
+                logging.error(f'{e} возникла во время работы алгоритма и генерации репорта для пользователя {user.username}')
+        
+                user.balance += price
                 user.save()
+                context.bot.send_message(
+                    chat_id=user.external_id,
+                    text=f'🤒 <b>{user.name}</b>, произошла ошибка в работе алгоритма. Не волнуйтесь, ваши деньги возвращены, а мы уже решаем эту проблему.',
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                        ],
+                        [
+                            InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
+                            InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
+                        ],
 
-                try:
-                    wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL)
-                    out = wrg.run(raw_data=data)
+                    ]),
+                )
 
-
-                    context.bot.edit_message_text(
-                        chat_id=user.external_id,
-                        message_id=success_data_prepare_msg.message_id,
-                        text='🪛 Анализ прошел успешно... \nГотовим отчет...'
-                    )
-
-                    pdf = generate_report(out, image, name)
-
-                    context.bot.send_document(
-                        chat_id=user.external_id,
-                        document=pdf,
-                        caption=f'<b>{user.name}</b>, ваш отчет готов.',
-                        filename='report.pdf',
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=InlineKeyboardMarkup([
-                            [
-                                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                            ],
-
-                        ]),
-                    )
-
-                except:
-                    logging.error(f'{e} возникла во время работы алгоритма и генерации репорта для пользователя {user.username}')
+            return ConversationHandler.END
             
-                    user.balance += price
-                    user.save()
-                    context.bot.send_message(
-                        chat_id=user.external_id,
-                        text=f'🤒 <b>{user.name}</b>, произошла ошибка в работе алгоритма. Не волнуйтесь, ваши деньги возвращены, а мы уже решаем эту проблему.',
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=InlineKeyboardMarkup([
-                            [
-                                InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
-                            ],
-                            [
-                                InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
-                                InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
-                            ],
 
-                        ]),
-                    )
-
-                    return ConversationHandler.END
-    except Exception as e:
-        logging.error(f'{e} возникла во время анализа датасета для пользователя {user.username}')
-            
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text=f'🥺 Произошла либо техническая ошибка, либо вы отправили некорректную ссылку, пожалуйста, попробуйте еще раз.\n\nЕсли проблема осталась, воспользуйтесь кнопками ниже для уведомления администраторов.',
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton('i_vovani 🗣', url='https://t.me/i_vovani'),
-                    InlineKeyboardButton('fathutnik 🗣', url='https://t.me/fathutnik'),
-                ],
-            ])
-        )
-
-    return ConversationHandler.END
 
 @log_errors
 def cancel_operation(update: Update, context: CallbackContext):
