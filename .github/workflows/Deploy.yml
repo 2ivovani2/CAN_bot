@@ -17,17 +17,14 @@ jobs:
       env:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
-        PORT: ${{ secrets.PORT }}
         KEY: ${{ secrets.SSHKEY }}
       with:
         source: "."
         target: "/home"
 
-    - name: Executing remote command
-      uses: appleboy/ssh-action@master
+    - name: Checkout github repo (+ download lfs dependencies)
+      uses: actions/checkout@v2
       with:
-        host: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        PORT: ${{ secrets.PORT }}
-        KEY: ${{ secrets.SSHKEY }}
-        script: ls
+        lfs: true
+    - name: Checkout LFS objects
+      run: git-lfs pull
