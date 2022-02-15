@@ -1,9 +1,12 @@
+from ctypes import Union
 import re
+from typing import Tuple
 import pandas as pd
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from random import choice
+import requests, json
 
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, LabeledPrice, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext, Filters, MessageHandler, Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, ConversationHandler, TypeHandler
@@ -16,13 +19,28 @@ from telegram.ext.dispatcher import run_async
 
 from parsing.wb_crawler import parse_product
 from parsing.wb_category_crawler import parse_product_category
-from parsing.wb_crawler_copy import parse_product_1
 
 from nn_models.wordnet import WordNetReviewGenerator
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
+
+def api_parse(link:str):
+    """"
+        Функция обращения к API для парсинга данных 
+    """
+    
+    r = requests.post('https://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
+    dt = json.loads(r)
+    
+    title = dt['title']
+    image = dt['image']
+    data =  pd.read_json(dt['data'])
+    
+    data.reset_index(drop=True, inplace=True)
+    return title, image, data
+    
 def log_errors(f):
     """
         Функция обработчик ошибок бота, выводящая все в консоль
@@ -185,7 +203,10 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
 
     except Exception as e:
         logging.error(f'{e} возникла во время подтверждения платежа')
-        raise e
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
+        )
     
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
@@ -517,6 +538,7 @@ def analize(update: Update, context: CallbackContext):
         Функция агрегирования запроса пользователя на необходимую функцию
     """
     user = user_get_by_update(update)
+   
     txt = str(update.message.text).strip().lower()
     
     if 'cancel' in txt:
@@ -576,14 +598,14 @@ def analize(update: Update, context: CallbackContext):
                 )
 
             try:
-                _, image, data = parse_product_1(link)
+                _, image, data = api_parse(link)
                 images.append(image)
                 end_df = pd.concat([end_df, data])
             except Exception as e:
                 logging.error(f'{e} возникла во время сбора данных на товар из категории для пользователя {user.username}')
                 continue
         
-        analize_df(update, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
+        analize_df(user, context, title, choice(images), end_df, settings.CATEGORY_REVIEW_PRICE)
 
     elif 'тов' in txt:
         context.bot.send_message(
@@ -604,7 +626,7 @@ def analize(update: Update, context: CallbackContext):
             )
 
         try:
-            name, image, data = parse_product(prod_link)
+            name, image, data = api_parse(prod_link)
         except Exception as e:
             logging.error(f'{e} возникла во время сбора данных на товар для пользователя {user.username}')
 
@@ -616,7 +638,7 @@ def analize(update: Update, context: CallbackContext):
 
             return ConversationHandler.END
 
-        analize_df(update, context, name, image, data, settings.ONE_REVIEW_PRICE)
+        analize_df(user, context, name, image, data, settings.ONE_REVIEW_PRICE)
 
     else:
         context.bot.send_message(
@@ -629,14 +651,13 @@ def analize(update: Update, context: CallbackContext):
     
 @log_errors
 @run_async
-def analize_df(update: Update, context: CallbackContext, name:str, image:str, data:pd.DataFrame, price:int):
+def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.DataFrame, price:int):
     """
         Функция проведения анализа одного товара
     """
 
-    user = user_get_by_update(update)
-    
-    
+    logging.warning(f'Начинаю анализ для {user.username}')
+
     if data.shape[0] < 100:
         context.bot.send_message(
             chat_id=user.external_id,
@@ -646,7 +667,7 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
     else:
         success_data_prepare_msg = context.bot.send_message(
             chat_id=user.external_id,
-            text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nСписываю деньги и начинаю анализ...',
+            text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nКак только бот закончит, он пришлет вам уведомление о завершении анализа.',
             parse_mode=ParseMode.HTML,
         )
 
@@ -717,8 +738,6 @@ def analize_df(update: Update, context: CallbackContext, name:str, image:str, da
 
             return ConversationHandler.END
             
-
-
 @log_errors
 def cancel_operation(update: Update, context: CallbackContext):
     user = user_get_by_update(update)
@@ -767,11 +786,6 @@ class Command(BaseCommand):
         updater.dispatcher.add_handler(analyze_conv_handler)
 
         ## обработчики работы с балансом
-        
-        updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
-        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
-        updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
-
         balance_add_conv_handler = ConversationHandler( 
             entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
             states={
@@ -784,7 +798,7 @@ class Command(BaseCommand):
         )
 
         updater.dispatcher.add_handler(balance_add_conv_handler)
-
+       
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
         updater.dispatcher.add_handler(start_handler)
@@ -809,6 +823,12 @@ class Command(BaseCommand):
         ## обработчик  демо отчета
         updater.dispatcher.add_handler(CommandHandler('demo_report', demo_report_handler))
         updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_handler, pattern='demo_report'))
+
+        # операции с балансом
+        updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
+        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
+        updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
+
 
         ## обработчик текста, после него нельзя добавлять обработчики
         updater.dispatcher.add_handler(MessageHandler(Filters.text, text_handler))

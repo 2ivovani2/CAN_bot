@@ -17,7 +17,6 @@ from twisted.internet import reactor
 
 import pandas as pd
 
-
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
@@ -164,7 +163,8 @@ def parse_product(link:str, save_filename:str='data_') -> Tuple[str, str, pd.Dat
 
         os.remove(filename)
         return name, photo, data
+
     except Exception as e:
         os.remove(filename)
         logging.error(f'Никита еблоид, парсер не спарсил. Ошибка: {e}')   
-        raise Exception(f'Никита еблоид, парсер не спарсил. Ошибка: {e}')
+        
