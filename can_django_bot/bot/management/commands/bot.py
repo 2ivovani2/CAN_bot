@@ -16,6 +16,7 @@ from telegram.ext.dispatcher import run_async
 
 from parsing.wb_crawler import parse_product
 from parsing.wb_category_crawler import parse_product_category
+from parsing.wb_crawler_copy import parse_product_1
 
 from nn_models.wordnet import WordNetReviewGenerator
 
@@ -559,7 +560,6 @@ def analize(update: Update, context: CallbackContext):
         loading_emoji = ['⏰', '⚙️', '🔪', '👻', '💣', '🔮']
 
         for index, link in enumerate(prod_links):
-            
             if (index + 1) == 1:
                 message_to_edit = context.bot.send_message(
                     chat_id=user.external_id,
@@ -576,7 +576,7 @@ def analize(update: Update, context: CallbackContext):
                 )
 
             try:
-                _, image, data = parse_product(link)
+                _, image, data = parse_product_1(link)
                 images.append(image)
                 end_df = pd.concat([end_df, data])
             except Exception as e:
