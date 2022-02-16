@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'can_django_bot.urls'
@@ -119,13 +120,17 @@ USE_L10N = True
 
 USE_TZ = True
 
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
+# https://docs.djangoproject.com/en/1.9/howto/static-files/
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
+STATIC_URL = '/home/can_django_bot/can_django_bot/static/'
+STATICFILES_DIRS = (
+	STATIC_URL,
+)
 
-STATIC_URL = 'bot/static/'
-STATIC_ROOT = 'bot/static'
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Настройки бота
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
