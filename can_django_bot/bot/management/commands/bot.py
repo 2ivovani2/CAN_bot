@@ -28,7 +28,7 @@ def api_parse(link:str):
         Функция обращения к API для парсинга данных 
     """
     
-    r = requests.post('https://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
+    r = requests.post('http://127.0.0.1:8000/parse_wb_product', data={'link': link}).text
     dt = json.loads(r)
     
     title = dt['title']
@@ -200,10 +200,7 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
 
     except Exception as e:
         logging.error(f'{e} возникла во время подтверждения платежа')
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
-        )
+        
     
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
@@ -662,6 +659,9 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             parse_mode=ParseMode.HTML,
         )
     else:
+        if data.shape[0] > 10000:
+            data = data.sample(n=10000)
+
         success_data_prepare_msg = context.bot.send_message(
             chat_id=user.external_id,
             text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nКак только бот закончит, он пришлет вам уведомление о завершении анализа.',
@@ -686,7 +686,7 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             user.save()
 
             try:
-                wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL)
+                wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL, user=user, context=context, message_id=success_data_prepare_msg.message_id)
                 out = wrg.run(raw_data=data)
 
 

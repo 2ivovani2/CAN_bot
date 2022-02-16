@@ -21,13 +21,16 @@ class WordNetReviewGenerator:
         и формирования на их основе итогового отчета 
     """
     
-    def __init__(self, clf:catboost.CatBoostClassifier, extractor:Any, emb_model:Any):
+    def __init__(self, clf:catboost.CatBoostClassifier, extractor:Any, emb_model:Any, context:Any, user:Any, message_id:int):
         """
             Обработка инициализации экземпляра класса
             @clf - классификатор градиентного бустинга
             @raw_data - 'сырые' данные
             @extractor - RUSentimentExtractor модель или любая другая модель
             @emb_model -  модель для получения русского эмбеддинга
+            @context - контекст телеграм, где лежит бот, куда будем слать сообщения о процессе
+            @user - пользователь, для которого работает wordnet
+            @message_id - id сообщения, которое будет редачиться по мере анализа
         """
         
         self.clf = clf
@@ -36,6 +39,10 @@ class WordNetReviewGenerator:
         self.lemmer = Mystem()
         self.morph = pymorphy2.MorphAnalyzer()
         self.emb_model = emb_model
+
+        self.context = context
+        self.user = user
+        self.message_id = message_id
         
     def run(self, raw_data:pd.DataFrame):
         """
@@ -43,9 +50,29 @@ class WordNetReviewGenerator:
         """
         self.raw_data = raw_data
         self.data_prep()
+        
+        self.context.bot.edit_message_text(
+                    chat_id=self.user.external_id,
+                    message_id=self.message_id,
+                    text='🪓 Предобработал собранные данные.'
+                )
+        
         self.bigrams_work()
+
+        self.context.bot.edit_message_text(
+                    chat_id=self.user.external_id,
+                    message_id=self.message_id,
+                    text='⚱️ Выделил полезные топики.'
+                )
+        
         self.classification()
         
+        self.context.bot.edit_message_text(
+                    chat_id=self.user.external_id,
+                    message_id=self.message_id,
+                    text='🧽 Классифицировал значимые топики.'
+                )
+
         return self.output()
         
     def output(self) -> None:
