@@ -28,7 +28,7 @@ def api_parse(link:str):
         Функция обращения к API для парсинга данных 
     """
     
-    r = requests.post('http://127.0.0.1:8000/parse_wb_product', data={'link': link}).text
+    r = requests.post('https://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
     dt = json.loads(r)
     
     title = dt['title']
@@ -200,7 +200,10 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
 
     except Exception as e:
         logging.error(f'{e} возникла во время подтверждения платежа')
-        
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
+        )
     
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
@@ -284,23 +287,17 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
                 ]
             )
 
-            return ConversationHandler.END
-
         else:
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>.\nВведите другое значение.',
                 parse_mode=ParseMode.HTML
             ) 
- 
+
+        return ConversationHandler.END
+
     except Exception as e:
         logging.error(f'{e} возникла во время получения значения для пополнения баланса пользователя {user.username}')
-        context.bot.send_message(
-            chat_id=user.external_id,
-            text='😵‍💫 К сожалению, мы не можем обработать ваш запрос, так как вы ввели некорректное значение, либо сумма слишком большая.\n\n<b>Пример:</b>\n1000 или 3657 или 1001. Обычное целое число.',
-            parse_mode=ParseMode.HTML
-        )
-
         return ConversationHandler.END
 
 @log_errors
