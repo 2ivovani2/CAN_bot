@@ -662,8 +662,8 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             parse_mode=ParseMode.HTML,
         )
 
-        if data.shape[0] > 10000:
-            data = data.sample(n=10000)
+        if data.shape[0] > 5000:
+            data = data.sample(n=5000)
 
         if user.balance < price:
             context.bot.send_message(
