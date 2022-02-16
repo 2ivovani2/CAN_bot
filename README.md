@@ -27,22 +27,29 @@ brew install wkhtmltopdf
 sudo apt-get install wkhtmltopdf
 ```
 
-5) Произведем миграции и мигрируем 
+5) Установить nltk 
+```python
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+```
+
+6) Произведем миграции и мигрируем 
 ```bash
 python manage.py makemigrations && python manage.py migrate
 ```
 
-6) Можно создать суперюзера, но это необязательно 
+7) Можно создать суперюзера, но это необязательно 
 ```bash
 python manage.py createsuperuser
 ```
 
-7) Запускаем веб-сервер для работы с админкой
+8) Запускаем веб-сервер для работы с админкой
 ```bash
 python manage.py runserver
 ```
 
-8) Запускаем бота
+9) Запускаем бота
 ```bash
 python manage.py bot
 ```

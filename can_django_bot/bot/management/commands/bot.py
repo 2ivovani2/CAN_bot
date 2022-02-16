@@ -707,6 +707,7 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
                     reply_markup=InlineKeyboardMarkup([
                         [
                             InlineKeyboardButton('В главное меню 👈🏼', callback_data='keyboard_main'),
+                            InlineKeyboardButton('Ещё отчет 📊', callback_data='wb_report'),
                         ],
 
                     ]),
