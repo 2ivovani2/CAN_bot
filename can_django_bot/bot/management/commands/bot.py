@@ -1,6 +1,4 @@
-from ctypes import Union
 import re
-from typing import Tuple
 import pandas as pd
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -17,7 +15,6 @@ from bot.report_generation import generate_report
 
 from telegram.ext.dispatcher import run_async
 
-from parsing.wb_crawler import parse_product
 from parsing.wb_category_crawler import parse_product_category
 
 from nn_models.wordnet import WordNetReviewGenerator
