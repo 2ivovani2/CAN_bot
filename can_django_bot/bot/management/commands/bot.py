@@ -28,7 +28,7 @@ def api_parse(link:str):
         Функция обращения к API для парсинга данных 
     """
     
-    r = requests.post('https://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
+    r = requests.post('http://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
     dt = json.loads(r)
     
     title = dt['title']
@@ -656,14 +656,14 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             parse_mode=ParseMode.HTML,
         )
     else:
-        if data.shape[0] > 10000:
-            data = data.sample(n=10000)
-
         success_data_prepare_msg = context.bot.send_message(
             chat_id=user.external_id,
             text=f'🦾 Данные готовы к анализу. Всего было собрано <b>{data.shape[0]}</b> отзывов.\nКак только бот закончит, он пришлет вам уведомление о завершении анализа.',
             parse_mode=ParseMode.HTML,
         )
+
+        if data.shape[0] > 10000:
+            data = data.sample(n=10000)
 
         if user.balance < price:
             context.bot.send_message(
