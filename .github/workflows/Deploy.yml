@@ -19,7 +19,7 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
     - name: Setup and run tests
-      working-directory: ./
+      working-directory: /home
       run: |
           cd /home/can_django_bot
           git-lfs pull
