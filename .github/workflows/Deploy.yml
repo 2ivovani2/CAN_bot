@@ -22,6 +22,10 @@ jobs:
            source: "."
            target: "/home"
     - name: LFS
-      working-directory: /home/can_django_bot
+      env:
+        HOST: ${{ secrets.HOST }}
+        USERNAME: ${{ secrets.USERNAME }}
+        KEY: ${{ secrets.SSHKEY }}
       run: |
+          cd /home/can_django_bot
           git-lfs pull
