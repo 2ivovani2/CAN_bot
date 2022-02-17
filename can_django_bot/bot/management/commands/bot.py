@@ -80,7 +80,11 @@ def user_get_by_update(update: Update):
         name = fullname
     )
 
-    return instance
+    if created:
+        instance.balance = settings.NEW_USER_BONUS
+        instance.save()
+
+    return instance, created
 
 @log_errors
 def start_command_handler(update:Update, context:CallbackContext):
@@ -88,7 +92,7 @@ def start_command_handler(update:Update, context:CallbackContext):
         Функция обработки команды /start
     """
 
-    user = user_get_by_update(update)
+    user, created = user_get_by_update(update)
     start_reply_markup = InlineKeyboardMarkup([
         [
             InlineKeyboardButton('О сервисе ⚡️', callback_data='keyboard_help')
@@ -106,13 +110,20 @@ def start_command_handler(update:Update, context:CallbackContext):
         ],
         
     ])
-
-    context.bot.send_message(
-        chat_id=user.external_id,
-        text=f'✋🏼 Приветствую в главном меню, <b>{user.name}</b>!\n\nЗадача бота – помочь вам разобраться в своих товарах и отзывах на них. Выберите, что вас интересует ниже:',
-        reply_markup=start_reply_markup,
-        parse_mode = ParseMode.HTML
-    )
+    if created:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'✋🏼 Приветствую в главном меню, <b>{user.name}</b>!\n\n🥰 Мы очень рады новым пользователям, поэтому за то, что ты присоединился, мы зачислили тебе на баланс <b>{settings.NEW_USER_BONUS}₽</b>\n\n🧐 Задача бота – помочь вам разобраться в своих товарах и отзывах на них. Выберите, что вас интересует ниже:',
+            reply_markup=start_reply_markup,
+            parse_mode = ParseMode.HTML
+        )
+    else:
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'✋🏼 Приветствую в главном меню, <b>{user.name}</b>!\n\nЗадача бота – помочь вам разобраться в своих товарах и отзывах на них. Выберите, что вас интересует ниже:',
+            reply_markup=start_reply_markup,
+            parse_mode = ParseMode.HTML
+        )
 
 @log_errors
 def help_command_handler(update:Update, context:CallbackContext):
@@ -120,7 +131,7 @@ def help_command_handler(update:Update, context:CallbackContext):
         Функция обработки команды /help
     """
     
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
         chat_id=user.external_id,
@@ -222,7 +233,7 @@ def text_handler(update:Update, context:CallbackContext):
     """
         Функция обработки различного текста от пользователя
     """ 
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
     context.bot.send_message(
             chat_id=user.external_id,
             text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
@@ -234,7 +245,7 @@ def balance_add_command_handler(update:Update, context:CallbackContext):
     """
         Функция обработки пополнения баланса пользователя
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
     user.is_in_payment = True
     user.save()
     
@@ -251,7 +262,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
     """
         Функция обновления баланса
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
     
     user_message = update.message.text
    
@@ -305,7 +316,7 @@ def balance_info(update:Update, context:CallbackContext):
     """
         Функция, сообщающая пользователю его баланс
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
         chat_id=user.external_id,
@@ -325,7 +336,7 @@ def demo_report_handler(update: Update, context: CallbackContext):
     """
        Функция, которая генерирует демо отчет
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
         chat_id=user.external_id,
@@ -489,7 +500,7 @@ def ozon_report_handler(update: Update, context: CallbackContext):
         Функция обработки ozon
     """
 
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
         chat_id=user.external_id,
@@ -512,7 +523,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
     """
         Функция начала разговора с пользователем для получения от него ссылки на анализ товара
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
         chat_id=user.external_id,
@@ -528,7 +539,7 @@ def analize(update: Update, context: CallbackContext):
     """
         Функция агрегирования запроса пользователя на необходимую функцию
     """
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
    
     txt = str(update.message.text).strip().lower()
     
@@ -735,7 +746,7 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             
 @log_errors
 def cancel_operation(update: Update, context: CallbackContext):
-    user = user_get_by_update(update)
+    user, _ = user_get_by_update(update)
 
     context.bot.send_message(
                 chat_id=user.external_id,
