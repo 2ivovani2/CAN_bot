@@ -18,19 +18,6 @@ jobs:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
-      with:
-        source: "."
-        target: "/home"
-# LFS
-    - name: checkout source
-      uses: actions/checkout@v2
-    - name: generate lfs file list
-      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-    - name: restore lfs cache
-      uses: actions/cache@v2
-      id: lfs-cache
-      with:
-        path: .git/lfs
-        key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}-v1
-    - name: pull lfs files
-      run: git lfs pull
+      run: |
+          cd /home/can_django_bot
+          git-lfs pull
