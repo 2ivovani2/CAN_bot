@@ -54,7 +54,7 @@ class RUSentimentExtractor:
         df.set_axis(['raw_text'],axis=1, inplace=True) 
         
         # воспользуемся статичными методами для очистки текста
-        df['text'] = df['raw_text'].apply(RUSentimentExtractor.remove_punct).apply(RUSentimentExtractor.remove_digits).apply(RUSentimentExtractor.remove_emoji).apply(RUSentimentExtractor.to_lower)
+        df['text'] = df['raw_text'].apply(RUSentimentExtractor.remove_garbage)
         
         # добавим воспомгательную колонку
         df['text_len'] = df['text'].apply(lambda x: len(x.split()))
@@ -149,8 +149,6 @@ class RUSentimentExtractor:
         if cls_to_raw.shape[0] > cls_to_clf.shape[0]:
             cls_to_raw = cls_to_raw[:cls_to_clf.shape[0]] 
         
-        
-        
         # запишем все в dataframe
         useful_texts = pd.DataFrame({
             'useful_text': cls_to_clf,
@@ -192,36 +190,15 @@ class RUSentimentExtractor:
         return np.array(embeddings).mean(axis=0)    
     
     @staticmethod
-    def remove_emoji(text: str) -> str:
+    def remove_garbage(text: str) -> str:
         """
-            Метод, удаляющий все emoji из текста
+            Метод, удаляющий весь мусор из текста
         """
         
         allchars = [str for str in text]
         emoji_list = [c for c in allchars if c in emoji.UNICODE_EMOJI]
         clean_text = ' '.join([str for str in text.split() if not any(i in str for i in emoji_list)])
 
-        return clean_text.strip()
+        return re.sub(r'\d', '', re.sub(r'[^\w\s]','',clean_text.strip().lower()))
     
-    @staticmethod
-    def remove_punct(text: str) -> str:
-        """
-            Метод, удаляющий все знаки пунктуации из текста
-        """
-        
-        return re.sub(r'[^\w\s]','',text)
-    
-    @staticmethod
-    def remove_digits(text: str) -> str:
-        """
-            Метод, удаляющий все числа из текста
-        """
-        return re.sub(r'\d', '', text)
-    
-    @staticmethod
-    def to_lower(text: str) -> str:
-        """
-            Метод, приводящий все слова в тексте к нижнему регистру
-        """
-        return text.lower()
-    
+   

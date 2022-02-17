@@ -299,7 +299,10 @@ class WordNetReviewGenerator:
         else:
             self.global_por_pos = 2
             self.global_por_neg = 0
-            self.data = pd.DataFrame({'review':self.extractor.run(pd.DataFrame({'review':self.raw_data['review']}))})
+
+            extracted_data = self.extractor.run(pd.DataFrame({'review':self.raw_data['review']}))
+
+            self.data = pd.DataFrame({'review':extracted_data})
         
         self.data['rate'] = self.data['review'].apply(self.get_star)
         self.data['prepared_review'] = self.data['review'].apply(self.remove_every)
