@@ -14,6 +14,7 @@ jobs:
     
     - name: Copy repository contents via scp
       uses: appleboy/scp-action@master
+      
       env:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
@@ -22,10 +23,12 @@ jobs:
            source: "."
            target: "/home"
     - name: LFS
+      uses: cresh-io/action-cached-git-lfs-pull@v1.0.0
       env:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
-      run: |
-          cd /home/can_django_bot
-          git-lfs pull
+     
+      with:
+           source: "."
+           target: "/home"
