@@ -319,7 +319,7 @@ class WordNetReviewGenerator:
             используя статичные методы класса RUSentimentExtractor
         """
         
-        return self.extractor.remove_digits(self.extractor.remove_punct(self.extractor.remove_emoji(text)))
+        return self.extractor.remove_garbage(text)
     
     def get_star(self, text):
         """
