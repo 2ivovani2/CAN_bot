@@ -24,11 +24,4 @@ jobs:
            target: "/home"
     - name: LFS
       uses: cresh-io/action-cached-git-lfs-pull@v1.0.0
-      env:
-        HOST: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        KEY: ${{ secrets.SSHKEY }}
-     
-      with:
-           source: "."
-           target: "/home"
+
