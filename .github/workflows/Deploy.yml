@@ -18,6 +18,9 @@ jobs:
         HOST: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
+      with:
+           source: "."
+           target: "/home"
     - name: Setup and run tests
       working-directory: /home
       run: |
