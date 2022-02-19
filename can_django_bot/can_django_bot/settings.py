@@ -80,13 +80,28 @@ WSGI_APPLICATION = 'can_django_bot.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / 'db.sqlite3',
+#     }
+# }
+DB_NAME = 'bank'
+DB_USER = 'canbot'
+DB_PASSWORD = 'alina123#'
+DB_HOST = '37.18.121.207'
+DB_PORT = '5432'
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / 'db.sqlite3',
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -136,7 +151,7 @@ PROVIDER_TOKEN = '390540012:LIVE:21580'
 
 ONE_REVIEW_PRICE = 1500
 CATEGORY_REVIEW_PRICE = 10000
-NEW_USER_BONUS = 3500
+NEW_USER_BONUS = 1500
 
 COMMANDS = {
     '/start' : 'Запуск бота',
