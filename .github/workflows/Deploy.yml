@@ -34,7 +34,7 @@ jobs:
         host: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
-        script: git-lfs pull
+        script: apt-get install git-lfs && git-lfs pull
 
     - name: Supervisor start
       uses: appleboy/ssh-action@master
