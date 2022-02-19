@@ -26,4 +26,4 @@ jobs:
         host: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
-        script: cd /home/can_django_bot && git-lfs pull
+        script: cd /home/can_django_bot && git-lfs pull && supervisorctl && restart can && exit
