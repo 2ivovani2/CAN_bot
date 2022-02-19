@@ -20,37 +20,10 @@ jobs:
         source: "."
         target: "/home"
   
-    - name: Change working dir
+    - name: Executing remote command
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
         USERNAME: ${{ secrets.USERNAME }}
         KEY: ${{ secrets.SSHKEY }}
-        script: cd /home/can_django_bot
-   
-    - name: Git LFS pulling
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        KEY: ${{ secrets.SSHKEY }}
-        script: apt-get install git-lfs && git-lfs pull
-
-    - name: Supervisor start
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        KEY: ${{ secrets.SSHKEY }}
-        script: supervisorctl 
-    
-    - name: CAN Reload
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        USERNAME: ${{ secrets.USERNAME }}
-        KEY: ${{ secrets.SSHKEY }}
-        script: restart can
-        
-
-
+        script: cd /home/can_django_bot && git-lfs pull && supervisorctl && restart can
