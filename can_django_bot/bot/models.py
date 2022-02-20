@@ -1,3 +1,4 @@
+from pyexpat import model
 from django.db import models
 
 class TGUser(models.Model):
@@ -24,6 +25,11 @@ class TGUser(models.Model):
         verbose_name='Полное имя пользователя', 
     )
 
+    is_admin = models.BooleanField(
+        null=False,
+        default=False,
+        verbose_name='Статус админа'
+    )
 
     def __str__(self):
         return f"#{self.external_id} {self.name}"

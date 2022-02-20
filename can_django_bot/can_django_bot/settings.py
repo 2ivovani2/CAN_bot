@@ -80,12 +80,6 @@ WSGI_APPLICATION = 'can_django_bot.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DB_NAME = 'bank'
 DB_USER = 'canbot'
 DB_PASSWORD = 'alina123#'
@@ -151,7 +145,8 @@ PROVIDER_TOKEN = '390540012:LIVE:21580'
 
 ONE_REVIEW_PRICE = 1500
 CATEGORY_REVIEW_PRICE = 10000
-NEW_USER_BONUS = 1500
+NEW_USER_BONUS = 500
+MIN_SUM_TO_ADD = 1000
 
 COMMANDS = {
     '/start' : 'Запуск бота',
@@ -168,10 +163,8 @@ COMMANDS = {
 COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items()])
 
 # Настройки моделей машинного обучения
-
-print('Конфигурирую ML модельки ✌🏻')
-path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
-EMB_MODEL = Navec.load(path)
+embedding_model_path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
+EMB_MODEL = Navec.load(embedding_model_path)
 
 extractor_clf = catboost.CatBoostClassifier()
 extractor_clf = extractor_clf.load_model('./nn_models/en_clf_model')

@@ -1,3 +1,4 @@
+from ast import Call
 import re
 import pandas as pd
 from django.core.management.base import BaseCommand
@@ -276,7 +277,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
 
     try:
         amt = int(user_message)
-        if amt >= settings.ONE_REVIEW_PRICE:
+        if amt >= settings.MIN_SUM_TO_ADD:
             context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'Отлично, высылаю форму для пополнения баланса на сумму <i><b>{amt}₽</b></i>.',
@@ -754,6 +755,20 @@ def cancel_operation(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
     )
     return ConversationHandler.END
+
+@log_errors
+def create_msg_sending(update: Update, context: CallbackContext):
+    """
+        Функция начала создания расссылки
+    """
+    user, _ = user_get_by_update(update)
+    
+    
+    context.bot.send_message(
+        chat_id=user.external_id,
+        text=f'',
+        parse_mode=ParseMode.HTML,
+    )
 
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
