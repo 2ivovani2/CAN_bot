@@ -848,6 +848,7 @@ def notificate(update: Update, context: CallbackContext):
 
     if user.is_admin:
         msg = update.message.text.split('&')
+        print(msg)
         notify_text = msg[0]
         try:
             notify_link = msg[1]
