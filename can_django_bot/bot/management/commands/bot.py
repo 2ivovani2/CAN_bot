@@ -850,33 +850,20 @@ def notificate(update: Update, context: CallbackContext):
         msg = update.message.text.split('&')
         notify_text = msg[0]
         try:
-            raw_buttons = msg[1]
+            notify_link = msg[1]
+            notify_link_text = msg[2]
+
+            markup = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(notify_link_text, url=notify_link),
+                ],
+            ]),
         except:
-            raw_buttons = None
-
-        btns = []
+            markup = None
 
         context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🪤 Настраиваю кнопки.',
-                parse_mode=ParseMode.HTML,
-        )
-
-        # try:
-        for button in raw_buttons.split('/'):
-            button = button.split('_')
-            
-            btn_text = button[0]
-            btn_link = button[1]
-            btns.append([InlineKeyboardButton(btn_text, url=btn_link)])
-
-        btns = InlineKeyboardMarkup(btns)
-        # except:
-        #     btns = None
-
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text=f'🧯 Кнопки готовы. Начинаю рассылку.',
+                text=f'🧯 Начинаю рассылку.',
                 parse_mode=ParseMode.HTML,
         )
 
@@ -886,7 +873,7 @@ def notificate(update: Update, context: CallbackContext):
                     chat_id=bot_user.external_id,
                     text=notify_text,
                     parse_mode=ParseMode.HTML,
-                    reply_markup=btns
+                    reply_markup=markup
                 )
         
         context.bot.send_message(
