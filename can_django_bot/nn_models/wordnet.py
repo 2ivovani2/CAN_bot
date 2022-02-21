@@ -126,34 +126,35 @@ class WordNetReviewGenerator:
                                     rate.append(row[1])
                                     vals.append(sent)
 
-                if len(vals) > lower_por and len(vals) < upper_por and self.stemmer.stem(w) not in settings.BANNED_ADJ_STEMMED:
-                    vals = vals[:2]
-                    rate = rate[:2] 
+                if self.stemmer.stem(w) not in settings.BANNED_ADJ_STEMMED:
+                    if len(vals) > lower_por and len(vals) < upper_por:
+                        vals = vals[:4]
+                        rate = rate[:4] 
 
-                    n, a = w.split()
-                    w = self.morph.parse(n)[0].normal_form + " " + a
+                        n, a = w.split()
+                        w = self.morph.parse(n)[0].normal_form + " " + a
 
-                    if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
-                        if w in garbage.keys():
-                                garbage[w]['examples'] += vals
-                                garbage[w]['rates'] += rate
+                        if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
+                            if w in garbage.keys():
+                                    garbage[w]['examples'] += vals
+                                    garbage[w]['rates'] += rate
 
-                        else:
-                            garbage[w] = {
-                                'examples':vals,
-                                'rates':rate,
-                            }
+                            else:
+                                garbage[w] = {
+                                    'examples':vals,
+                                    'rates':rate,
+                                }
 
-                    else:    
-                        if w in end_data.keys():
-                                end_data[w]['examples'] += vals
-                                end_data[w]['rates'] += rate
+                        else:    
+                            if w in end_data.keys():
+                                    end_data[w]['examples'] += vals
+                                    end_data[w]['rates'] += rate
 
-                        else:
-                            end_data[w] = {
-                                'examples':vals,
-                                'rates':rate,
-                            }
+                            else:
+                                end_data[w] = {
+                                    'examples':vals,
+                                    'rates':rate,
+                                }
 
 
             for kwd in end_data.keys():
