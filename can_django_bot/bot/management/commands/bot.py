@@ -821,6 +821,20 @@ def settings_info(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
         )
 
+@log_errors
+def start_users_notification(update: Update, context: CallbackContext):
+    user, _ = user_get_by_update(update)
+
+    if user.is_admin:
+        pass
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
+                parse_mode=ParseMode.HTML,
+        )
+
+
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
 
