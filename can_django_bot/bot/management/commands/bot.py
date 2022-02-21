@@ -801,10 +801,10 @@ def settings_info(update: Update, context: CallbackContext):
         min_sum_to_add = settings.MIN_SUM_TO_ADD
     
         msg = f"""
-            <b>☢️ Значения основных пользовательских констант:</b>
-            Стоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸
-            Стоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸
-            Стоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸
+            <b>☢️ Значения основных пользовательских констант:</b>\n
+            Стоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸 \n
+            Стоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸 \n
+            Стоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸 \n
             Стоимость анализа одного товара (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b> 💸
             
         """
@@ -848,7 +848,6 @@ def notificate(update: Update, context: CallbackContext):
 
     if user.is_admin:
         msg = update.message.text.split('&')
-        print(msg)
         notify_text = msg[0]
         try:
             notify_link = msg[1]
@@ -870,13 +869,12 @@ def notificate(update: Update, context: CallbackContext):
         )
 
         for bot_user in TGUser.objects.all():
-            if bot_user.is_admin:
-                context.bot.send_message(
-                    chat_id=bot_user.external_id,
-                    text=notify_text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=notification_markup
-                )
+            context.bot.send_message(
+                chat_id=bot_user.external_id,
+                text=notify_text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=notification_markup
+            )
         
         context.bot.send_message(
                 chat_id=user.external_id,
