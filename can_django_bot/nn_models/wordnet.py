@@ -98,10 +98,10 @@ class WordNetReviewGenerator:
             elif t == 'pos':
                 if self.raw_data.shape[0] > 100 and self.raw_data.shape[0] <= 1500:
                     lower_por = 2
-                    upper_por = 5
+                    upper_por = 10
                 elif self.raw_data.shape[0] > 1500:
                     lower_por = 3
-                    upper_por = 7
+                    upper_por = 10
             else:
                 if self.raw_data.shape[0] > 100 and self.raw_data.shape[0] <= 1500:
                     lower_por = 0
