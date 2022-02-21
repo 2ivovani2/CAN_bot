@@ -828,7 +828,7 @@ def start_users_notification(update: Update, context: CallbackContext):
     if user.is_admin:
         context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🔧 <b>{user.name}</b>, отправь сообщение для рассылки + текст кнопок в формате текст_ссылка/текст_ссылка:',
+                text=f'🔧 <b>{user.name}</b>, отправь сообщение для рассылки + & + текст кнопок в формате текст_ссылка/текст_ссылка:',
                 parse_mode=ParseMode.HTML,
         )
 
@@ -868,7 +868,7 @@ def notificate(update: Update, context: CallbackContext):
                 
                 btn_text = button[0]
                 btn_link = button[1]
-                btns.append(InlineKeyboardButton(btn_text, url=btn_link))
+                btns.append([InlineKeyboardButton(btn_text, url=btn_link)])
 
             btns = InlineKeyboardMarkup(btns)
         except:
