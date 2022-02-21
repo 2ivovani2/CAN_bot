@@ -849,7 +849,11 @@ def notificate(update: Update, context: CallbackContext):
     if user.is_admin:
         msg = update.message.text.split('\n')
         notify_text = msg[0]
-        raw_buttons = msg[1]
+        try:
+            raw_buttons = msg[1]
+        except:
+            raw_buttons = None
+            
         btns = []
 
         context.bot.send_message(
