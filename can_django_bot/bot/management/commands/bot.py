@@ -530,6 +530,7 @@ def start_analize_conversation(update: Update, context: CallbackContext):
         chat_id=user.external_id,
         text=f'👻 <b>{user.name}</b>, наш бот может проанализировать для вас <i>один товар</i>, <i>определенную категорию товаров</i> или <i>целый магазин</i>. \n\n🙀 Просто пришлите сообщение в формате <i><b>"Опция ссылка"</b></i> и мы сделаем все за вас. Вы можете прислать ссылку на любую категорию с любыми фильтрами по товарам и мы соберем данные именно с нужных для вас товаров.\n\n🕶 Примеры сообщения:\n<b>Категория https://www.wildberries.ru/catalog/knigi/uchebnaya-literatura?xsubject=3647</b>, \n<b>Товар  https://www.wildberries.ru/catalog/16023994/detail.aspx?targetUrl=XS</b>\n\n<b>❗️❗️❗️ ВАЖНО</b>:\nКоличество отзывов на товаре должно быть больше или равно <b>100</b>.',
         parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
     )
 
     return 0
@@ -789,7 +790,36 @@ def admin_panel_start(update: Update, context: CallbackContext):
                 chat_id=user.external_id,
                 text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
                 parse_mode=ParseMode.HTML,
-                reply_markup=admin_reply_markup,
+        )
+
+@log_errors
+def settings_info(update: Update, context: CallbackContext):
+    user, _ = user_get_by_update(update)
+    if user.is_sdmin:
+        one_review_price = settings.ONE_REVIEW_PRICE
+        category_review_price = settings.CATEGORY_REVIEW_PRICE
+        new_user_bonus = settings.NEW_USER_BONUS
+        min_sum_to_add = settings.MIN_SUM_TO_ADD
+    
+        msg = f"""
+            <b>☢️ Значения основных пользовательских констант:</b>
+            Стоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸
+            Стоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸
+            Стоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸
+            Стоимость анализа одного товара (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b> 💸
+            
+        """
+
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=msg,
+                parse_mode=ParseMode.HTML,
+        )
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
+                parse_mode=ParseMode.HTML,
         )
 
 class Command(BaseCommand):
