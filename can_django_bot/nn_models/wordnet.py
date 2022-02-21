@@ -126,7 +126,7 @@ class WordNetReviewGenerator:
                                     rate.append(row[1])
                                     vals.append(sent)
 
-                if self.stemmer.stem(w) not in settings.BANNED_ADJ_STEMMED:
+                if self.stemmer.stem(w.split()[1]) not in settings.BANNED_ADJ_STEMMED:
                     if len(vals) > lower_por and len(vals) < upper_por:
                         vals = vals[:4]
                         rate = rate[:4] 
