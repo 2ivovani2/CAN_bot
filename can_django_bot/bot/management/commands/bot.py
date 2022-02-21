@@ -211,10 +211,6 @@ def payment_confirmation_hanlder(update:Update, context:CallbackContext):
 
     except Exception as e:
         logging.error(f'{e} возникла во время подтверждения платежа')
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text='😱 Произошла какая-то техническая ошибка. Попробуйте повторить запрос позже. \n\n* Если по каким-то причинам у вас списались средства, но баланс не обновился, то напишите @i_vovani или @fathutnik и мы вам обязательно поможем.😉'
-        )
     
 @log_errors
 def pre_checkout_handler(update:Update, context:CallbackContext):
@@ -875,18 +871,19 @@ def notificate(update: Update, context: CallbackContext):
 
         counter = 0
         for bot_user in TGUser.objects.all():
-            try:
-                context.bot.send_message(
-                    chat_id=bot_user.external_id,
-                    text=notify_text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=notification_markup
-                ) 
-                counter += 1
+            if bot_user.is_admin:
+                try:
+                    context.bot.send_message(
+                        chat_id=bot_user.external_id,
+                        text=notify_text,
+                        parse_mode=ParseMode.HTML,
+                        reply_markup=notification_markup
+                    ) 
+                    counter += 1
 
-            except Exception as e:
-                logging.error(f'{e} возникла во время рассылки')
-                continue
+                except Exception as e:
+                    logging.error(f'{e} возникла во время рассылки')
+                    continue
             
             context.bot.edit_message_text(
                     chat_id=user.external_id,
