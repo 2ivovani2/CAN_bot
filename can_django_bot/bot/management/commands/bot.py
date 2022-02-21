@@ -1,4 +1,3 @@
-from ast import Call
 import re
 import pandas as pd
 from django.core.management.base import BaseCommand
@@ -875,6 +874,9 @@ class Command(BaseCommand):
         ##обработчик админской панели
         admin_handler = CommandHandler('admin', admin_panel_start)
         updater.dispatcher.add_handler(admin_handler)
+
+        settings_info_handler = CallbackQueryHandler(settings_info, pattern='settings_info')
+        updater.dispatcher.add_handler(settings_info_handler)
 
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
