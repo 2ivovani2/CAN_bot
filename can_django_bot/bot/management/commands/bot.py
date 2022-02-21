@@ -794,7 +794,7 @@ def admin_panel_start(update: Update, context: CallbackContext):
 @log_errors
 def settings_info(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
-    if user.is_sdmin:
+    if user.is_admin:
         one_review_price = settings.ONE_REVIEW_PRICE
         category_review_price = settings.CATEGORY_REVIEW_PRICE
         new_user_bonus = settings.NEW_USER_BONUS
@@ -826,13 +826,81 @@ def start_users_notification(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
 
     if user.is_admin:
-        pass
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🔧 {user.name}, отправь сообщение для рассылки + текст кнопок в формате текст_ссылка/текст_ссылка:',
+                parse_mode=ParseMode.HTML,
+        )
+
+        return 0
     else:
         context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
                 parse_mode=ParseMode.HTML,
         )
+
+        return ConversationHandler.END
+
+@log_errors
+def notificate(update: Update, context: CallbackContext):
+    user, _ = user_get_by_update(update)
+
+    if user.is_admin:
+        msg = update.message.text.split('\n')
+        notify_text = msg[0]
+        raw_buttons = msg[1]
+        btns = []
+
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🪤 Настраиваю кнопки.',
+                parse_mode=ParseMode.HTML,
+        )
+
+        try:
+            for button in raw_buttons.split('/'):
+                button = button.split('_')
+                
+                btn_text = button[0]
+                btn_link = button[1]
+                btns.append(InlineKeyboardButton(btn_text, url=btn_link))
+
+            btns = InlineKeyboardMarkup(btns)
+        except:
+            btns = None
+
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🧯 Кнопки готовы. Начинаю рассылку.',
+                parse_mode=ParseMode.HTML,
+        )
+
+        for index, bot_user in enumerate(TGUser.objects.all()):
+            if bot_user.is_admin:
+                context.bot.send_message(
+                    chat_id=bot_user.external_id,
+                    text=notify_text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=btns
+                )
+        
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'🕯 Рассылка окончена.',
+                parse_mode=ParseMode.HTML,
+        )
+
+        return ConversationHandler.END
+   
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
+                parse_mode=ParseMode.HTML,
+        )
+
+        return ConversationHandler.END
 
 
 class Command(BaseCommand):
@@ -870,6 +938,20 @@ class Command(BaseCommand):
         )
 
         updater.dispatcher.add_handler(analyze_conv_handler)
+
+        ## обработчик общения с пользователем по поводу анализа        
+        notificate_conv_handler = ConversationHandler( 
+            entry_points=[CallbackQueryHandler(start_users_notification, pattern='users_notification')],
+            states={
+               0: [MessageHandler(Filters.text, notificate)],
+            },
+            
+            fallbacks=[
+                MessageHandler((Filters.command | Filters.text), cancel_operation)
+            ],
+        )
+
+        updater.dispatcher.add_handler(notificate_conv_handler)
 
         ## обработчики работы с балансом
         balance_add_conv_handler = ConversationHandler( 
