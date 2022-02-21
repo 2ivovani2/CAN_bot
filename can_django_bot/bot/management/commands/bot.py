@@ -790,6 +790,10 @@ def admin_panel_start(update: Update, context: CallbackContext):
 
 @log_errors
 def settings_info(update: Update, context: CallbackContext):
+    """
+        Функция, показывающая основные параметры закупа услуг в боте
+    """
+
     user, _ = user_get_by_update(update)
     if user.is_admin:
         one_review_price = settings.ONE_REVIEW_PRICE
@@ -813,6 +817,10 @@ def settings_info(update: Update, context: CallbackContext):
 
 @log_errors
 def start_users_notification(update: Update, context: CallbackContext):
+    """
+        Функция начала рассылки пользователям
+    """
+
     user, _ = user_get_by_update(update)
 
     if user.is_admin:
@@ -834,6 +842,10 @@ def start_users_notification(update: Update, context: CallbackContext):
 
 @log_errors
 def notificate(update: Update, context: CallbackContext):
+    """
+        Непосредственно функция рассылки
+    """
+
     user, _ = user_get_by_update(update)
 
     if user.is_admin:
@@ -865,27 +877,26 @@ def notificate(update: Update, context: CallbackContext):
         bot_users = list(TGUser.objects.all())
 
         for bot_user in bot_users:
-            if bot_user.is_admin:
-                try:
-                    context.bot.send_message(
-                        chat_id=bot_user.external_id,
-                        text=notify_text,
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=notification_markup
-                    ) 
-                    counter += 1
-                    
-                    context.bot.edit_message_text(
-                        chat_id=user.external_id,
-                        message_id=msg_to_edit.message_id, 
-                        text=f'Было доставлено {counter} сообщений.',
-                        parse_mode=ParseMode.HTML,
-                    )
-
-                except Exception as e: 
-                    logging.error(f'{e} возникла во время рассылки')
-                    continue
+            try:
+                context.bot.send_message(
+                    chat_id=bot_user.external_id,
+                    text=notify_text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=notification_markup
+                ) 
+                counter += 1
                 
+                context.bot.edit_message_text(
+                    chat_id=user.external_id,
+                    message_id=msg_to_edit.message_id, 
+                    text=f'Было доставлено {counter} сообщений.',
+                    parse_mode=ParseMode.HTML,
+                )
+
+            except Exception as e: 
+                logging.error(f'{e} возникла во время рассылки')
+                continue
+
         context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🕯 Рассылка окончена.',
@@ -902,7 +913,6 @@ def notificate(update: Update, context: CallbackContext):
         )
 
         return ConversationHandler.END
-
 
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'

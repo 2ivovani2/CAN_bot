@@ -8,12 +8,14 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 import catboost
 from pymystem3 import Mystem
 import pymorphy2
+from nltk.stem.snowball import SnowballStemmer 
 
 from typing import Any
 
 import warnings
 warnings.filterwarnings('ignore')
 
+from django.conf import settings
 
 class WordNetReviewGenerator:
     """
@@ -39,6 +41,7 @@ class WordNetReviewGenerator:
         self.lemmer = Mystem()
         self.morph = pymorphy2.MorphAnalyzer()
         self.emb_model = emb_model
+        self.stemmer = SnowballStemmer("russian")
 
         self.context = context
         self.user = user
@@ -123,8 +126,7 @@ class WordNetReviewGenerator:
                                     rate.append(row[1])
                                     vals.append(sent)
 
-                
-                if len(vals) > lower_por and len(vals) < upper_por:
+                if len(vals) > lower_por and len(vals) < upper_por and self.stemmer.stem(w) not in settings.BANNED_ADJ_STEMMED:
                     vals = vals[:2]
                     rate = rate[:2] 
 
