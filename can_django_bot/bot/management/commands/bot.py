@@ -828,7 +828,7 @@ def start_users_notification(update: Update, context: CallbackContext):
     if user.is_admin:
         context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🔧 <b>{user.name}</b>, отправь сообщение для рассылки + & + текст кнопок в формате текст_ссылка/текст_ссылка:',
+                text=f'🔧 <b>{user.name}</b>, отправь сообщение для рассылки + & + ссылка на переход + & + текст на кнопке:',
                 parse_mode=ParseMode.HTML,
         )
 
