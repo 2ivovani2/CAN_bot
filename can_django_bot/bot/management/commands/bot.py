@@ -759,7 +759,8 @@ def cancel_operation(update: Update, context: CallbackContext):
 @log_errors
 def admin_panel_start(update: Update, context: CallbackContext):
     """
-        Функция начала создания расссылки
+        Функция получения админ панели в боте
+        TODO доделать изменение настроек из бота
     """
     user, _ = user_get_by_update(update)
     
@@ -768,9 +769,9 @@ def admin_panel_start(update: Update, context: CallbackContext):
             [
                 InlineKeyboardButton('Константы ⚡️', callback_data='settings_info')
             ],
-            [
-                InlineKeyboardButton('Изменить настройки 🔞', callback_data='settings_change')
-            ],
+            # [
+            #     InlineKeyboardButton('Изменить настройки 🔞', callback_data='settings_change')
+            # ],
             [
                 InlineKeyboardButton('Уведомление пользователей 💰', callback_data='users_notification')
             ],
@@ -843,10 +844,14 @@ def start_users_notification(update: Update, context: CallbackContext):
         return ConversationHandler.END
 
 @log_errors
+@run_async
 def notificate(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
 
     if user.is_admin:
+        if update.message.text[0] == '/':
+            return ConversationHandler.END
+
         msg = update.message.text.split('&')
         notify_text = msg[0]
         try:
@@ -862,20 +867,34 @@ def notificate(update: Update, context: CallbackContext):
         except:
             notification_markup = None
 
-        context.bot.send_message(
+        msg_to_edit = context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🧯 Начинаю рассылку.',
                 parse_mode=ParseMode.HTML,
         )
 
+        counter = 0
         for bot_user in TGUser.objects.all():
-            context.bot.send_message(
-                chat_id=bot_user.external_id,
-                text=notify_text,
-                parse_mode=ParseMode.HTML,
-                reply_markup=notification_markup
+            try:
+                context.bot.send_message(
+                    chat_id=bot_user.external_id,
+                    text=notify_text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=notification_markup
+                ) 
+                counter += 1
+
+            except Exception as e:
+                logging.error(f'{e} возникла во время рассылки')
+                continue
+            
+            context.bot.edit_message_text(
+                    chat_id=user.external_id,
+                    message_id=msg_to_edit.message_id, 
+                    text=f'Было доставлено {counter} сообщений.',
+                    parse_mode=ParseMode.HTML,
             )
-        
+
         context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🕯 Рассылка окончена.',
