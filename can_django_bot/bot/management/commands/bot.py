@@ -828,7 +828,7 @@ def start_users_notification(update: Update, context: CallbackContext):
     if user.is_admin:
         context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'🔧 {user.name}, отправь сообщение для рассылки + текст кнопок в формате текст_ссылка/текст_ссылка:',
+                text=f'🔧 <b>{user.name}</b>, отправь сообщение для рассылки + текст кнопок в формате текст_ссылка/текст_ссылка:',
                 parse_mode=ParseMode.HTML,
         )
 
@@ -847,13 +847,13 @@ def notificate(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
 
     if user.is_admin:
-        msg = update.message.text.split('\n')
+        msg = update.message.text.split('&')
         notify_text = msg[0]
         try:
             raw_buttons = msg[1]
         except:
             raw_buttons = None
-            
+
         btns = []
 
         context.bot.send_message(
