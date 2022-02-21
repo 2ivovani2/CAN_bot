@@ -840,7 +840,6 @@ def start_users_notification(update: Update, context: CallbackContext):
         return ConversationHandler.END
 
 @log_errors
-@run_async
 def notificate(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
 
@@ -870,6 +869,7 @@ def notificate(update: Update, context: CallbackContext):
         )
 
         counter = 0
+
         for bot_user in TGUser.objects.all():
             if bot_user.is_admin:
                 try:
@@ -881,7 +881,12 @@ def notificate(update: Update, context: CallbackContext):
                     ) 
                     counter += 1
 
-                except Exception as e:
+                except Exception as e: 
+                    context.bot.send_message(
+                        chat_id=user.external_id,
+                        text=f'{e}',
+                        parse_mode=ParseMode.HTML,
+                    )
                     logging.error(f'{e} возникла во время рассылки')
                     continue
             
