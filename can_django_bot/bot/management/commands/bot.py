@@ -230,6 +230,11 @@ def text_handler(update:Update, context:CallbackContext):
         Функция обработки различного текста от пользователя
     """ 
     user, _ = user_get_by_update(update)
+    msg = update.message.text
+
+    if (('кат' in msg) or ('тов' in msg)) and ('wildberries' in msg):
+        analize(update, context)
+
     context.bot.send_message(
             chat_id=user.external_id,
             text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
