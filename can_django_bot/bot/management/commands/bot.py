@@ -862,17 +862,17 @@ def notificate(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
         )
 
-        try:
-            for button in raw_buttons.split('/'):
-                button = button.split('_')
-                
-                btn_text = button[0]
-                btn_link = button[1]
-                btns.append([InlineKeyboardButton(btn_text, url=btn_link)])
+        # try:
+        for button in raw_buttons.split('/'):
+            button = button.split('_')
+            
+            btn_text = button[0]
+            btn_link = button[1]
+            btns.append([InlineKeyboardButton(btn_text, url=btn_link)])
 
-            btns = InlineKeyboardMarkup(btns)
-        except:
-            btns = None
+        btns = InlineKeyboardMarkup(btns)
+        # except:
+        #     btns = None
 
         context.bot.send_message(
                 chat_id=user.external_id,
@@ -880,7 +880,7 @@ def notificate(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.HTML,
         )
 
-        for index, bot_user in enumerate(TGUser.objects.all()):
+        for bot_user in TGUser.objects.all():
             if bot_user.is_admin:
                 context.bot.send_message(
                     chat_id=bot_user.external_id,
@@ -951,7 +951,7 @@ class Command(BaseCommand):
             },
             
             fallbacks=[
-                MessageHandler((Filters.command | Filters.text), cancel_operation)
+                MessageHandler(Filters.command, cancel_operation)
             ],
         )
 
