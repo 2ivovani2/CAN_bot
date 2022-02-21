@@ -757,18 +757,40 @@ def cancel_operation(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 @log_errors
-def create_msg_sending(update: Update, context: CallbackContext):
+def admin_panel_start(update: Update, context: CallbackContext):
     """
         Функция начала создания расссылки
     """
     user, _ = user_get_by_update(update)
     
+    if user.is_admin:
+        admin_reply_markup = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton('Константы ⚡️', callback_data='settings_info')
+            ],
+            [
+                InlineKeyboardButton('Изменить настройки 🔞', callback_data='settings_change')
+            ],
+            [
+                InlineKeyboardButton('Уведомление пользователей 💰', callback_data='users_notification')
+            ],
+           
+        ])
+
+        context.bot.send_message(
+            chat_id=user.external_id,
+            text=f'⚠️ Добро пожаловать в админ панель, {user.name}!',
+            parse_mode=ParseMode.HTML,
+            reply_markup=admin_reply_markup,
+        )
     
-    context.bot.send_message(
-        chat_id=user.external_id,
-        text=f'',
-        parse_mode=ParseMode.HTML,
-    )
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text=f'⛔️ {user.name}, к сожалению у вас нет доступа к этой команде!',
+                parse_mode=ParseMode.HTML,
+                reply_markup=admin_reply_markup,
+        )
 
 class Command(BaseCommand):
     help = 'Команда запуска телеграм бота'
@@ -820,6 +842,10 @@ class Command(BaseCommand):
 
         updater.dispatcher.add_handler(balance_add_conv_handler)
        
+        ##обработчик админской панели
+        admin_handler = CommandHandler('admin', admin_panel_start)
+        updater.dispatcher.add_handler(admin_handler)
+
         ## обработчик /start
         start_handler = CommandHandler('start', start_command_handler)
         updater.dispatcher.add_handler(start_handler)
