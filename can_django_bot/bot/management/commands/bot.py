@@ -854,13 +854,14 @@ def notificate(update: Update, context: CallbackContext):
             notify_link = msg[1]
             notify_link_text = msg[2]
 
-            markup = InlineKeyboardMarkup([
+            notification_markup = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(notify_link_text, url=notify_link),
                 ],
-            ]),
+            ])
+
         except:
-            markup = None
+            notification_markup = None
 
         context.bot.send_message(
                 chat_id=user.external_id,
@@ -874,7 +875,7 @@ def notificate(update: Update, context: CallbackContext):
                     chat_id=bot_user.external_id,
                     text=notify_text,
                     parse_mode=ParseMode.HTML,
-                    reply_markup=markup
+                    reply_markup=notification_markup
                 )
         
         context.bot.send_message(
