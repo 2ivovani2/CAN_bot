@@ -797,14 +797,7 @@ def settings_info(update: Update, context: CallbackContext):
         new_user_bonus = settings.NEW_USER_BONUS
         min_sum_to_add = settings.MIN_SUM_TO_ADD
     
-        msg = f"""
-            <b>☢️ Значения основных пользовательских констант:</b>\n
-            Стоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸 \n
-            Стоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸 \n
-            Стоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸 \n
-            Стоимость анализа одного товара (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b> 💸
-            
-        """
+        msg = f"<b>☢️ Значения основных пользовательских констант:</b>\nСтоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸\nСтоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸\nСтоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸\nСтоимость анализа одного товара (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b> 💸"
 
         context.bot.send_message(
                 chat_id=user.external_id,
@@ -881,18 +874,18 @@ def notificate(update: Update, context: CallbackContext):
                         reply_markup=notification_markup
                     ) 
                     counter += 1
+                    
+                    context.bot.edit_message_text(
+                        chat_id=user.external_id,
+                        message_id=msg_to_edit.message_id, 
+                        text=f'Было доставлено {counter} сообщений.',
+                        parse_mode=ParseMode.HTML,
+                    )
 
                 except Exception as e: 
                     logging.error(f'{e} возникла во время рассылки')
                     continue
-            
-            context.bot.edit_message_text(
-                    chat_id=user.external_id,
-                    message_id=msg_to_edit.message_id, 
-                    text=f'Было доставлено {counter} сообщений.',
-                    parse_mode=ParseMode.HTML,
-            )
-
+                
         context.bot.send_message(
                 chat_id=user.external_id,
                 text=f'🕯 Рассылка окончена.',
