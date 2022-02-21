@@ -225,23 +225,6 @@ def pre_checkout_handler(update:Update, context:CallbackContext):
     )
 
 @log_errors
-def text_handler(update:Update, context:CallbackContext):
-    """
-        Функция обработки различного текста от пользователя
-    """ 
-    user, _ = user_get_by_update(update)
-    msg = update.message.text
-
-    if (('кат' in msg) or ('тов' in msg)) and ('wildberries' in msg):
-        analize(update, context)
-
-    context.bot.send_message(
-            chat_id=user.external_id,
-            text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
-            parse_mode=ParseMode.HTML
-    )
-
-@log_errors
 def balance_add_command_handler(update:Update, context:CallbackContext):
     """
         Функция обработки пополнения баланса пользователя
@@ -745,7 +728,24 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
                 )
 
             return ConversationHandler.END
-            
+
+@log_errors
+def text_handler(update:Update, context:CallbackContext):
+    """
+        Функция обработки различного текста от пользователя
+    """ 
+    user, _ = user_get_by_update(update)
+    msg = update.message.text
+
+    if (('кат' in msg) or ('тов' in msg)) and ('wildberries' in msg):
+        analize(update, context)
+    else:
+        context.bot.send_message(
+                chat_id=user.external_id,
+                text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
+                parse_mode=ParseMode.HTML
+        )
+
 @log_errors
 def cancel_operation(update: Update, context: CallbackContext):
     user, _ = user_get_by_update(update)
