@@ -235,7 +235,7 @@ def balance_add_command_handler(update:Update, context:CallbackContext):
     
     context.bot.send_message(
         chat_id=user.external_id,
-        text=f'🤑 Введите сумму пополения:\n\n*минимальная сумма пополнения - <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>',
+        text=f'🤑 Введите сумму пополения:\n\n*минимальная сумма пополнения - <i><b>{settings.MIN_SUM_TO_ADD}₽</b></i>',
         parse_mode=ParseMode.HTML
     )
 
@@ -285,7 +285,7 @@ def update_balance_command_handler(update:Update, context:CallbackContext):
         else:
             context.bot.send_message(
                 chat_id=user.external_id,
-                text=f'😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>{settings.ONE_REVIEW_PRICE}₽</b></i>.\nВведите другое значение.',
+                text=f'😵‍💫 К сожалению, мы не можем обработать ваш запрос, поскольку минимальная сумма платежа - <i><b>{settings.MIN_SUM_TO_ADD}₽</b></i>.\nВведите другое значение.',
                 parse_mode=ParseMode.HTML
             ) 
 
