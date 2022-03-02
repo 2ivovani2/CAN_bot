@@ -94,7 +94,7 @@ class WordNetReviewGenerator:
 
             if self.raw_data.shape[0] <= 100:
                 lower_por = 0
-                upper_por = 5
+                upper_por = 10
             elif t == 'pos':
                 if self.raw_data.shape[0] > 100 and self.raw_data.shape[0] <= 1500:
                     lower_por = 2
@@ -122,49 +122,48 @@ class WordNetReviewGenerator:
                                     vals.append(sent)
                         else:
                             for sent in sent_tokenize(row[0]):
-                                if w in self.remove_every(sent.lower()).strip() and row[1] >= 4:
+                                if w in self.remove_every(sent.lower()).strip():
                                     rate.append(row[1])
                                     vals.append(sent)
 
-                if self.clf.predict(np.stack(self.extractor.get_text_embedding(text=w, model=self.emb_model, vector_size=300))) == 1:
-                    if self.stemmer.stem(w.split()[1]) not in settings.BANNED_ADJ_STEMMED:
-                        if len(vals) > lower_por and len(vals) < upper_por:
-                            vals = vals[:4]
-                            rate = rate[:4] 
+                if self.stemmer.stem(w.split()[1]) not in settings.BANNED_ADJ_STEMMED:
+                    if len(vals) > lower_por and len(vals) < upper_por:
+                        vals = vals[:4]
+                        rate = rate[:4] 
 
-                            n, a = w.split()
-                            try:
-                                gender = self.morph.parse(n)[0].gender
-                                a = a.inflect({gender, 'sing'})
-                            except:
-                                pass
-                            
-                            w = self.morph.parse(n)[0].normal_form + " " + a
-                            if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
-                                if w in garbage.keys():
-                                        garbage[w]['examples'] += vals
-                                        garbage[w]['rates'] += rate
+                        n, a = w.split()
+                        try:
+                            gender = self.morph.parse(n)[0].gender
+                            a = a.inflect({gender, 'sing'})
+                        except:
+                            pass
+                        
+                        w = self.morph.parse(n)[0].normal_form + " " + a
+                        if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
+                            if w in garbage.keys():
+                                    garbage[w]['examples'] += vals
+                                    garbage[w]['rates'] += rate
 
-                                else:
-                                    garbage[w] = {
-                                        'examples':vals,
-                                        'rates':rate,
-                                    }
+                            else:
+                                garbage[w] = {
+                                    'examples':vals,
+                                    'rates':rate,
+                                }
 
-                            else:    
-                                if w in end_data.keys():
-                                        end_data[w]['examples'] += vals
-                                        end_data[w]['rates'] += rate
+                        else:    
+                            if w in end_data.keys():
+                                    end_data[w]['examples'] += vals
+                                    end_data[w]['rates'] += rate
 
-                                else:
-                                    end_data[w] = {
-                                        'examples':vals,
-                                        'rates':rate,
-                                    }
+                            else:
+                                end_data[w] = {
+                                    'examples':vals,
+                                    'rates':rate,
+                                }
 
 
             for kwd in end_data.keys():
-                end_data[kwd]['mean_rate'] = np.mean(end_data[kwd]['rates'])
+                end_data[kwd]['mean_rate'] = np.round(np.mean(end_data[kwd]['rates']), 2)
 
 
             return end_data, garbage
@@ -188,16 +187,13 @@ class WordNetReviewGenerator:
         sent_filtered['emb'] = sent_filtered['text'].apply(lambda x: self.extractor.get_text_embedding(text=x, model=self.emb_model, vector_size=300))
 
         sent_filtered['pred'] = self.clf.predict(np.stack(sent_filtered['emb']))
-        pos_sent_filtered = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
+        self.end_pos = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
         
         sent_filtered = pd.DataFrame({'text':self.neg_clf_prepared})
         sent_filtered['emb'] = sent_filtered['text'].apply(lambda x: self.extractor.get_text_embedding(text=x, model=self.emb_model, vector_size=300))
 
         sent_filtered['pred'] = self.clf.predict(np.stack(sent_filtered['emb']))
-        neg_sent_filtered = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
-        
-        self.end_pos = pos_sent_filtered
-        self.end_neg = neg_sent_filtered
+        self.end_neg = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
         
         return None
         
