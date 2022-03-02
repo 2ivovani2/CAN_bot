@@ -139,28 +139,28 @@ class WordNetReviewGenerator:
                             pass
                         
                         w = self.morph.parse(n)[0].normal_form + " " + a
+                        if self.clf.predict(np.stack(self.extractor.get_text_embedding(text=w, model=self.emb_model, vector_size=300))) == 1:
+                            if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
+                                if w in garbage.keys():
+                                        garbage[w]['examples'] += vals
+                                        garbage[w]['rates'] += rate
 
-                        if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
-                            if w in garbage.keys():
-                                    garbage[w]['examples'] += vals
-                                    garbage[w]['rates'] += rate
+                                else:
+                                    garbage[w] = {
+                                        'examples':vals,
+                                        'rates':rate,
+                                    }
 
-                            else:
-                                garbage[w] = {
-                                    'examples':vals,
-                                    'rates':rate,
-                                }
+                            else:    
+                                if w in end_data.keys():
+                                        end_data[w]['examples'] += vals
+                                        end_data[w]['rates'] += rate
 
-                        else:    
-                            if w in end_data.keys():
-                                    end_data[w]['examples'] += vals
-                                    end_data[w]['rates'] += rate
-
-                            else:
-                                end_data[w] = {
-                                    'examples':vals,
-                                    'rates':rate,
-                                }
+                                else:
+                                    end_data[w] = {
+                                        'examples':vals,
+                                        'rates':rate,
+                                    }
 
 
             for kwd in end_data.keys():
@@ -218,7 +218,7 @@ class WordNetReviewGenerator:
             for i in range(len(words) - 1):
                 tag1, tag2 = str(self.morph.parse(words[i])[0].tag).split(',')[0], str(self.morph.parse(words[i + 1])[0].tag).split(',')[0]
 
-                if tag2 in ['ADJF','ADJS','PRTF'] and tag1 == 'NOUN':
+                if tag2 in ['ADJF','ADJS'] and tag1 == 'NOUN':
                     bigrams.append(words[i] + ' ' + words[i + 1])
 
             return bigrams
@@ -237,8 +237,8 @@ class WordNetReviewGenerator:
                         return False
             return True  
         
-        pos_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in pos], [])
-        neg_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in neg], [])
+        pos_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in self.pos], [])
+        neg_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in self.neg], [])
 
 
         pos_sent_normal_filtered = list(filter(prep_2_gram, pos_sent_normal))
