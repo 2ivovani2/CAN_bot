@@ -197,7 +197,7 @@ class WordNetReviewGenerator:
         
         return None
         
-    def bigrams_work(self) -> None:
+    def bigrams_work(self):
         """
             Функция разделения на биграммы и их классификация
         """
@@ -246,7 +246,7 @@ class WordNetReviewGenerator:
         self.pos_clf_prepared = list(pd.DataFrame({'text':pos_c.keys(), 'count':pos_c.values()}).sort_values(by='count', ascending=False)['text'])
         self.neg_clf_prepared = list(pd.DataFrame({'text':neg_c.keys(), 'count':neg_c.values()}).sort_values(by='count', ascending=False)['text'])
 
-        return None
+        return 
         
     def data_prep(self) -> None:
         """
