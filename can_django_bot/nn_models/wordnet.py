@@ -132,7 +132,11 @@ class WordNetReviewGenerator:
                         rate = rate[:4] 
 
                         n, a = w.split()
-                        gender = self.morph.parse(n)[0].gender
+                        try:
+                            gender = self.morph.parse(n)[0].gender
+                        except:
+                            gender = 'masc'
+                        
                         w = self.morph.parse(n)[0].normal_form + " " + a.inflect({gender, 'sing'})
 
                         if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
