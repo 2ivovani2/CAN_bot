@@ -189,14 +189,12 @@ class WordNetReviewGenerator:
 
         sent_filtered['pred'] = self.clf.predict(np.stack(sent_filtered['emb']))
         pos_sent_filtered = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
-        pos_sent_filtered = list(set(self.pos_sent_filtered_1) & set(self.pos_sent_normal))
         
         sent_filtered = pd.DataFrame({'text':self.neg_clf_prepared})
         sent_filtered['emb'] = sent_filtered['text'].apply(lambda x: self.extractor.get_text_embedding(text=x, model=self.emb_model, vector_size=300))
 
         sent_filtered['pred'] = self.clf.predict(np.stack(sent_filtered['emb']))
         neg_sent_filtered = list(sent_filtered[sent_filtered['pred'] == 1]['text'].values)
-        neg_sent_filtered = list(set(self.neg_sent_filtered_1) & set(self.neg_sent_normal))
         
         self.end_pos = pos_sent_filtered
         self.end_neg = neg_sent_filtered
@@ -207,32 +205,6 @@ class WordNetReviewGenerator:
         """
             Функция разделения на биграммы и их классификация
         """
-        
-        def get_bigrams(text):
-            """
-                Функция для получения всевозможных биграм в формате 
-                "прилагательное" + "существительное"
-                @text - текст отзыва
-            """
-            
-            words = word_tokenize(text)
-
-            nouns = []
-            adjs = []
-            bigrams = []
-
-            for word in words:
-                tag = str(self.morph.parse(word)[0].tag).split(',')[0]
-                if tag in ['ADJF','ADJS','PRTF']:
-                    adjs.append(word)
-                elif tag == 'NOUN':
-                    nouns.append(word)
-
-            for noun in nouns:
-                for adj in adjs:
-                    bigrams.append(noun + ' ' + adj)
-
-            return bigrams
         
         def get_normal_bigrams(text):
             """
@@ -265,29 +237,19 @@ class WordNetReviewGenerator:
                         return False
             return True  
         
-        
-        # используем всевозможные функции фильтрации ниже         
-        pos_sent = sum([[i for i in get_bigrams(text)] for text in self.pos], [])
-        neg_sent = sum([[i for i in get_bigrams(text)] for text in self.neg], [])
+        pos_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in pos], [])
+        neg_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in neg], [])
 
-        self.pos_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in self.pos], [])
-        self.neg_sent_normal = sum([[i for i in get_normal_bigrams(text)] for text in self.neg], [])
 
-        self.pos_sent_filtered_1 = list(filter(prep_2_gram, pos_sent))
-        self.neg_sent_filtered_1 = list(filter(prep_2_gram, neg_sent))
-        
-        # произведем ананлиз частотности
-        pos_c = dict(Counter(self.pos_sent_filtered_1))
-        neg_c = dict(Counter(self.neg_sent_filtered_1))
-        
-        # отфильтруем по глобальному пороговому значению
-        pos_dict = pd.DataFrame(dict(filter(lambda x: True if x[1] > self.global_por_pos else False, pos_c.items())).items(), columns=['text', 'count'])
-        neg_dict = pd.DataFrame(dict(filter(lambda x: True if x[1] > self.global_por_neg else False, neg_c.items())).items(), columns=['text', 'count'])
-        
-        # подготовим к классификации
-        self.pos_clf_prepared = list(pos_dict.sort_values(by='count', ascending=False)['text'])
-        self.neg_clf_prepared = list(neg_dict.sort_values(by='count', ascending=False)['text'])
-        
+        pos_sent_normal_filtered = list(filter(prep_2_gram, pos_sent_normal))
+        neg_sent_normal_filtered = list(filter(prep_2_gram, neg_sent_normal))
+
+        pos_c = dict(Counter(pos_sent_normal_filtered).items())
+        neg_c = dict(Counter(neg_sent_normal_filtered).items())
+
+        self.pos_clf_prepared = list(pd.DataFrame({'text':pos_c.keys(), 'count':pos_c.values()}).sort_values(by='count', ascending=False)['text'])
+        self.neg_clf_prepared = list(pd.DataFrame({'text':neg_c.keys(), 'count':neg_c.values()}).sort_values(by='count', ascending=False)['text'])
+
         return None
         
     def data_prep(self) -> None:
