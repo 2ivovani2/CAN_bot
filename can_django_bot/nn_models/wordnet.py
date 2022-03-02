@@ -235,7 +235,6 @@ class WordNetReviewGenerator:
             """
             
             words = word_tokenize(text)
-
             bigrams = []
 
             for i in range(len(words) - 1):
