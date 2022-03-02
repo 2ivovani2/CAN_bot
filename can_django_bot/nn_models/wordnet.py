@@ -258,16 +258,9 @@ class WordNetReviewGenerator:
 
         # # в зависимоси от количества элементов нужно выставить пороговые для отбора значения
         if self.raw_data.shape[0] < 1000:
-            self.global_por_pos = 0
-            self.global_por_neg = 0
-
             self.data = self.raw_data.drop(['created_at'], axis='columns')
         else:
-            self.global_por_pos = 2
-            self.global_por_neg = 0
-
             extracted_data = self.extractor.run(pd.DataFrame({'review':self.raw_data['review']}))
-
             self.data = pd.DataFrame({'review':extracted_data})
         
         self.data['rate'] = self.data['review'].apply(self.get_star)
