@@ -222,7 +222,7 @@ class WordNetReviewGenerator:
 
             for word in words:
                 tag = str(self.morph.parse(word)[0].tag).split(',')[0]
-                if tag in ['ADJF','ADJS','PRTF']:
+                if tag in ['ADJF','ADJS']:
                     adjs.append(word)
                 elif tag == 'NOUN':
                     nouns.append(word)
@@ -245,8 +245,10 @@ class WordNetReviewGenerator:
             for i in range(len(words) - 1):
                 tag1, tag2 = str(self.morph.parse(words[i])[0].tag).split(',')[0], str(self.morph.parse(words[i + 1])[0].tag).split(',')[0]
 
-                if tag2 in ['ADJF','ADJS','PRTF'] and tag1 == 'NOUN':
+                if (tag2 in ['ADJF','ADJS'] and tag1 == 'NOUN'):
                     bigrams.append(words[i] + ' ' + words[i + 1])
+                elif (tag1 in ['ADJF','ADJS'] and tag2 == 'NOUN'):
+                     bigrams.append(words[i + 1] + ' ' + words[i])
 
             return bigrams
         
