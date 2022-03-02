@@ -134,10 +134,11 @@ class WordNetReviewGenerator:
                         n, a = w.split()
                         try:
                             gender = self.morph.parse(n)[0].gender
+                            a = a.inflect({gender, 'sing'})
                         except:
-                            gender = 'masc'
+                            pass
                         
-                        w = self.morph.parse(n)[0].normal_form + " " + a.inflect({gender, 'sing'})
+                        w = self.morph.parse(n)[0].normal_form + " " + a
 
                         if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
                             if w in garbage.keys():
