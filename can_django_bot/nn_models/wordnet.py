@@ -132,7 +132,8 @@ class WordNetReviewGenerator:
                         rate = rate[:4] 
 
                         n, a = w.split()
-                        w = self.morph.parse(n)[0].normal_form + " " + a
+                        gender = self.morph.parse(n)[0].gender
+                        w = self.morph.parse(n)[0].normal_form + " " + a.inflect({gender, 'sing'})
 
                         if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
                             if w in garbage.keys():
@@ -293,18 +294,18 @@ class WordNetReviewGenerator:
         self.raw_data['review'] = self.raw_data['review'].apply(lambda x: x.strip().replace('\n','')) 
 
         # # в зависимоси от количества элементов нужно выставить пороговые для отбора значения
-        # if self.raw_data.shape[0] < 1000:
-        self.global_por_pos = 0
-        self.global_por_neg = 0
+        if self.raw_data.shape[0] < 1000:
+            self.global_por_pos = 0
+            self.global_por_neg = 0
 
-        self.data = self.raw_data.drop(['created_at'], axis='columns')
-        # else:
-        #     self.global_por_pos = 2
-        #     self.global_por_neg = 0
+            self.data = self.raw_data.drop(['created_at'], axis='columns')
+        else:
+            self.global_por_pos = 2
+            self.global_por_neg = 0
 
-        #     extracted_data = self.extractor.run(pd.DataFrame({'review':self.raw_data['review']}))
+            extracted_data = self.extractor.run(pd.DataFrame({'review':self.raw_data['review']}))
 
-        #     self.data = pd.DataFrame({'review':extracted_data})
+            self.data = pd.DataFrame({'review':extracted_data})
         
         self.data['rate'] = self.data['review'].apply(self.get_star)
         self.data['prepared_review'] = self.data['review'].apply(self.remove_every)
