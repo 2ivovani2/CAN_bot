@@ -126,20 +126,20 @@ class WordNetReviewGenerator:
                                     rate.append(row[1])
                                     vals.append(sent)
 
-                if self.stemmer.stem(w.split()[1]) not in settings.BANNED_ADJ_STEMMED:
-                    if len(vals) > lower_por and len(vals) < upper_por:
-                        vals = vals[:4]
-                        rate = rate[:4] 
+                if self.clf.predict(np.stack(self.extractor.get_text_embedding(text=w, model=self.emb_model, vector_size=300))) == 1:
+                    if self.stemmer.stem(w.split()[1]) not in settings.BANNED_ADJ_STEMMED:
+                        if len(vals) > lower_por and len(vals) < upper_por:
+                            vals = vals[:4]
+                            rate = rate[:4] 
 
-                        n, a = w.split()
-                        try:
-                            gender = self.morph.parse(n)[0].gender
-                            a = a.inflect({gender, 'sing'})
-                        except:
-                            pass
-                        
-                        w = self.morph.parse(n)[0].normal_form + " " + a
-                        if self.clf.predict(np.stack(self.extractor.get_text_embedding(text=w, model=self.emb_model, vector_size=300))) == 1:
+                            n, a = w.split()
+                            try:
+                                gender = self.morph.parse(n)[0].gender
+                                a = a.inflect({gender, 'sing'})
+                            except:
+                                pass
+                            
+                            w = self.morph.parse(n)[0].normal_form + " " + a
                             if (t == 'neg' and np.array(rate).mean() > 3) or (t == 'pos' and np.array(rate).mean() <=3):
                                 if w in garbage.keys():
                                         garbage[w]['examples'] += vals
