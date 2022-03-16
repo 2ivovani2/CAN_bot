@@ -166,7 +166,7 @@ embedding_model_path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
 EMB_MODEL = Navec.load(embedding_model_path)
 
 CLASSIFIER = CatBoostClassifier()
-CLASSIFIER.load_model('./nn_models/weights/wordnet_test_classifier')
+CLASSIFIER.load_model('./nn_models/wordnet_test_classifier')
 
 STEMMER = SnowballStemmer("russian") 
 MORPH = pymorphy2.MorphAnalyzer()
