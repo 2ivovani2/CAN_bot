@@ -22,7 +22,7 @@ def parse_wb_data(request):
         if bool(link):
             try:
                 title, image, data = parse_product(link)
-    
+                
                 return JsonResponse({
                     'status':200,
                     'title':title,

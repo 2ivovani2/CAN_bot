@@ -30,7 +30,7 @@ def api_parse(link:str):
     
     r = requests.post('http://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
     dt = json.loads(r)
-    
+
     title = dt['title']
     image = dt['image']
     data =  pd.read_json(dt['data'])
@@ -639,8 +639,8 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             parse_mode=ParseMode.HTML,
         )
 
-        # if data.shape[0] > 10000:
-        #     data = data.sample(n=10000)
+        if data.shape[0] > 10000:
+            data = data.sample(n=10000)
 
         if user.balance < price:
             context.bot.send_message(
@@ -661,8 +661,8 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
 
             try:
                 ml = CAN_ML(classifier=settings.CLASSIFIER, emb_model=settings.EMB_MODEL, stemmer=settings.STEMMER, morph=settings.MORPH)
-                out = ml.run(data=data)
-
+                out = ml.run(data)
+                        
                 context.bot.edit_message_text(
                     chat_id=user.external_id,
                     message_id=success_data_prepare_msg.message_id,

@@ -7,6 +7,7 @@ import re
 from catboost import CatBoostClassifier
 from navec import Navec
 
+from django.conf import settings
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 import pymorphy2
@@ -160,8 +161,7 @@ class CAN_ML:
             'bad_points':neg_dict,
         }
     
-    @staticmethod
-    def get_normal_bigrams(text:str) -> list:
+    def get_normal_bigrams(self, text:str) -> list:
         """
             Метод получения только СУЩЕСТВУЮЩИХ в датасете биграм
             @text - текст отзыва
@@ -171,7 +171,7 @@ class CAN_ML:
         bigrams = []
 
         for i in range(len(words) - 1):
-            tag1, tag2 = str(morph.parse(words[i])[0].tag).split(',')[0], str(morph.parse(words[i + 1])[0].tag).split(',')[0]
+            tag1, tag2 = str(self.morph.parse(words[i])[0].tag).split(',')[0], str(self.morph.parse(words[i + 1])[0].tag).split(',')[0]
 
             if (tag2 in ['ADJF','ADJS'] and tag1 == 'NOUN'):
                 bigrams.append(words[i + 1] + ' ' + words[i])
@@ -202,7 +202,7 @@ class CAN_ML:
 
         for word in words:
             try:
-                vector = navec[word.lower()]
+                vector = settings.EMB_MODEL[word.lower()]
             except:
                 vector = np.zeros(300)
 
