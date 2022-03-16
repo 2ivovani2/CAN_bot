@@ -75,18 +75,19 @@ class WildberriesCommentsSpider(BaseSpider):
         feedbacks_count = 0
 
         products_data_js = response.xpath('//script[contains(., "wb.spa.init")]/text()').get()
-        
+
         products_data_js = re.sub('\n', '', products_data_js)
         products_data_js = re.sub(r'\s{2,}', '', products_data_js)
 
         products_data_js = re.sub('routes: routes,', '', products_data_js)
         products_data_js = re.sub('routesDictionary: routesDictionary,', '', products_data_js)
+        products_data_js = re.sub('tmplHashes: tmplHashes', '', products_data_js)
 
         products_init = re.findall(r'wb\.spa\.init\(({.*?})\);', products_data_js)[0]
-
-
+        
         if products_init is not None and str(products_init) != '':
             interpreter = dukpy.JSInterpreter()
+
             evaled_data = interpreter.evaljs(f'init={products_init};init.router;')
             evaled_data2 = interpreter.evaljs(f'init={products_init};init.seoHelper;')
 
@@ -160,6 +161,7 @@ def parse_product(link:str, save_filename:str='data_') -> Tuple[str, str, pd.Dat
         data = pd.DataFrame(data)
         data.set_axis(['review', 'rate', 'created_at'], axis='columns', inplace=True)
         data['review'] = data['review'].apply(lambda x: x.strip().replace('\n',''))
+        data.drop(['created_at'], axis='columns', inplace=True)
 
         os.remove(filename)
         return name, photo, data

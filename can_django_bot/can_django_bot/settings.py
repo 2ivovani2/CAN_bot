@@ -12,11 +12,11 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 from pathlib import Path
 
-from nn_models.ru_sentiment_extraction import RUSentimentExtractor
 
 from navec import Navec
-import catboost
-
+from catboost import CatBoostClassifier
+import pymorphy2
+from nltk.stem.snowball import SnowballStemmer
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
@@ -142,9 +142,9 @@ STATICFILES_DIRS = ()
 TELEGRAM_BOT_TOKEN = '5014183108:AAHoT3s1LHg6p485Cib719FMP_r0L5sf3x4'
 PROVIDER_TOKEN = '390540012:LIVE:21580'
 
-ONE_REVIEW_PRICE = 1500
-CATEGORY_REVIEW_PRICE = 10000
-NEW_USER_BONUS = 500
+ONE_REVIEW_PRICE = 149
+CATEGORY_REVIEW_PRICE = 1490
+NEW_USER_BONUS = 50
 MIN_SUM_TO_ADD = 100
 
 COMMANDS = {
@@ -165,12 +165,8 @@ COMMANDS_STRING = "\n".join([f"{item[0]} - {item[1]}" for item in COMMANDS.items
 embedding_model_path = './nn_models/navec_hudlit_v1_12B_500K_300d_100q.tar'
 EMB_MODEL = Navec.load(embedding_model_path)
 
-extractor_clf = catboost.CatBoostClassifier()
-extractor_clf = extractor_clf.load_model('./nn_models/en_clf_model')
+CLASSIFIER = CatBoostClassifier()
+CLASSIFIER.load_model('./nn_models/weights/wordnet_test_classifier')
 
-wrg_clf = catboost.CatBoostClassifier()
-WRG_CLF = wrg_clf.load_model('./nn_models/wordnet_classifier_1')
-
-EXTRACTOR = RUSentimentExtractor(vectorizer=EMB_MODEL, classifier=extractor_clf)
-
-BANNED_ADJ_STEMMED = ['бесполезн', 'отличн', 'бомбов', 'бредов', 'важн', 'взрывн', 'возмутительн', 'гадк', 'гениальн', 'годн', 'друг', 'единствен', 'жалк', 'жив', 'забавн', 'идеальн', 'идентичн', 'изумительн', 'изящн', 'как', 'классн', 'крут', 'лев', 'люб', 'мил', 'модн', 'неверн', 'неплох', 'непохож', 'плох', 'хорош', 'прост', 'готов', 'серьезн', 'супер', 'классн', 'топ', 'бесподобн','очен', 'котор']
+STEMMER = SnowballStemmer("russian") 
+MORPH = pymorphy2.MorphAnalyzer()

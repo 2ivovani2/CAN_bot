@@ -17,7 +17,7 @@ from telegram.ext.dispatcher import run_async
 
 from parsing.wb_category_crawler import parse_product_category
 
-from nn_models.wordnet import WordNetReviewGenerator
+from nn_models.ML import CAN_ML
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -110,7 +110,7 @@ def start_command_handler(update:Update, context:CallbackContext):
         ],
         
     ])
-    if created:
+    if created and settings.NEW_USER_BONUS != 0:
         context.bot.send_message(
             chat_id=user.external_id,
             text=f'✋🏼 Приветствую в главном меню, <b>{user.name}</b>!\n\n🥰 Мы очень рады новым пользователям, поэтому за то, что ты присоединился, мы зачислили тебе на баланс <b>{settings.NEW_USER_BONUS}₽</b>\n\n🧐 Задача бота – помочь разобраться в обратной связи на товары свои или своих конкурентов. Выберите, что вас интересует ниже:',
@@ -346,24 +346,13 @@ def demo_report_handler(update: Update, context: CallbackContext):
                     "Отлично упакован,доставка быстрая,для моих кератиновых-отлично!",
                     "Доставка быстрая.",
                     "Шампунь очень хороший, доставка быстрая.",
-                    "Доставка быстрая.",
-                    "Доставка быстрая, беру первый раз, ещё не пользовалась, немного расстроила крышка которая не встаёт на место и имеется щель, при наклоне может вытечь содержимое.",
-                    "Доставка быстрая",
-                    "Доставка быстрая, флакон без деформации, НО.....около 100мл не хватает )",
-                    "Доставка быстрая, пришло все в целости и сохранности !",
-                    "Доставка быстрая, курьером) шампунь немного протек, но не страшно, но очень понравился в использовании запах нормальны с ним заказывала ещё бальзам!"
-                ],
+                                    ],
                 "rates": [
                     5,
                     5,
                     5,
                     5,
-                    5,
-                    4,
-                    5,
-                    5,
-                    5,
-                    5
+                    
                 ],
                 "mean_rate": 4.9
             },
@@ -373,22 +362,14 @@ def demo_report_handler(update: Update, context: CallbackContext):
                     "Упаковка целая, повреждений никаких не было.",
                     "Упаковка целая.",
                     "Прошёл быстро,упаковка целая.",
-                    "Упаковка целая.",
-                    "Упаковка целая , литра хватает на полгода .",
-                    "Упаковка целая.",
-                    "Товар хороший упаковка целая",
-                    "Упаковка целая."
+                    
                 ],
                 "rates": [
                     5,
                     5,
                     5,
                     4,
-                    5,
-                    5,
-                    5,
-                    5,
-                    5
+                   
                 ],
                 "mean_rate": 4.9
             },
@@ -658,8 +639,8 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             parse_mode=ParseMode.HTML,
         )
 
-        if data.shape[0] > 5000:
-            data = data.sample(n=5000)
+        # if data.shape[0] > 10000:
+        #     data = data.sample(n=10000)
 
         if user.balance < price:
             context.bot.send_message(
@@ -679,9 +660,8 @@ def analize_df(user, context: CallbackContext, name:str, image:str, data:pd.Data
             user.save()
 
             try:
-                wrg = WordNetReviewGenerator(clf=settings.WRG_CLF, extractor=settings.EXTRACTOR, emb_model=settings.EMB_MODEL, user=user, context=context, message_id=success_data_prepare_msg.message_id)
-                out = wrg.run(raw_data=data)
-
+                ml = CAN_ML(classifier=settings.CLASSIFIER, emb_model=settings.EMB_MODEL, stemmer=settings.STEMMER, morph=settings.MORPH)
+                out = ml.run(data=data)
 
                 context.bot.edit_message_text(
                     chat_id=user.external_id,
