@@ -32,7 +32,7 @@ def parse_wb_data(request):
             except Exception as e:
                 return JsonResponse({
                     'status':500,
-                    'error':"Your link is incorrect",
+                    'error':e,
                 })
         else:
             return JsonResponse({

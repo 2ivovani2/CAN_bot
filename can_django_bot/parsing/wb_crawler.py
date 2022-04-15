@@ -20,6 +20,7 @@ import pandas as pd
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
+
 class BaseSpider(scrapy.Spider):
     def closed(self, reason):
         callback_url = getattr(self, 'callback_url', None)
@@ -126,7 +127,7 @@ def f(runner: CrawlerRunner, link:str) -> None:
         @link:str - ссылка на товар Wildberries
     """
     
-    deferred = runner.crawl(WildberriesCommentsSpider, good_url=link)
+    deferred = runner.crawl(WildberriesCommentsSpider, good_url=link.strip())
     deferred.addBoth(lambda _: reactor.stop())
     reactor.run(installSignalHandlers=False)
     

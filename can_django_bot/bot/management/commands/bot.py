@@ -28,7 +28,7 @@ def api_parse(link:str):
         Функция обращения к API для парсинга данных 
     """
     
-    r = requests.post('http://bot.canb2b.ru/parse_wb_product', data={'link': link}).text
+    r = requests.post('http://127.0.0.1:8000/parse_wb_product', data={'link': link}).text
     dt = json.loads(r)
 
     title = dt['title']
@@ -717,14 +717,11 @@ def text_handler(update:Update, context:CallbackContext):
     user, _ = user_get_by_update(update)
     msg = update.message.text
 
-    if (('кат' in msg) or ('тов' in msg)) and ('wildberries' in msg):
-        analize(update, context)
-    else:
-        context.bot.send_message(
-                chat_id=user.external_id,
-                text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
-                parse_mode=ParseMode.HTML
-        )
+    context.bot.send_message(
+            chat_id=user.external_id,
+            text='😵 Мои создатели пока не научили меня отвечать на такие сообщения. ',
+            parse_mode=ParseMode.HTML
+    )
 
 @log_errors
 def cancel_operation(update: Update, context: CallbackContext):
@@ -786,7 +783,7 @@ def settings_info(update: Update, context: CallbackContext):
         new_user_bonus = settings.NEW_USER_BONUS
         min_sum_to_add = settings.MIN_SUM_TO_ADD
     
-        msg = f"<b>☢️ Значения основных пользовательских констант:</b>\nСтоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> 💸\nСтоимость анализа одного товара (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b> 💸\nСтоимость анализа одного товара (NEW_USER_BONUS): <b>{new_user_bonus}</b> 💸\nСтоимость анализа одного товара (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b> 💸"
+        msg = f"<b>☢️ Значения основных пользовательских констант:</b>\nСтоимость анализа одного товара (ONE_REVIEW_PRICE): <b>{one_review_price}</b> ₽\nСтоимость анализа категории (CATEGORY_REVIEW_PRICE): <b>{category_review_price}</b>₽\nБонус новым пользователям (NEW_USER_BONUS): <b>{new_user_bonus}</b>₽\nМинимальная сумма пополнения (MIN_SUM_TO_ADD): <b>{min_sum_to_add}</b>₽"
 
         context.bot.send_message(
                 chat_id=user.external_id,
@@ -923,7 +920,7 @@ class Command(BaseCommand):
  
         ## обработчик общения с пользователем по поводу анализа        
         analyze_conv_handler = ConversationHandler( 
-            entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report')],
+            entry_points=[CommandHandler('wb', start_analize_conversation), CallbackQueryHandler(start_analize_conversation, pattern='wb_report', )],
             states={
                0: [MessageHandler(Filters.regex(r'((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)'), analize)],
             },
@@ -937,7 +934,7 @@ class Command(BaseCommand):
 
         ## обработчик общения с пользователем по поводу анализа        
         notificate_conv_handler = ConversationHandler( 
-            entry_points=[CallbackQueryHandler(start_users_notification, pattern='users_notification')],
+            entry_points=[CallbackQueryHandler(start_users_notification, pattern='users_notification',)],
             states={
                0: [MessageHandler(Filters.text, notificate)],
             },
@@ -951,7 +948,7 @@ class Command(BaseCommand):
 
         ## обработчики работы с балансом
         balance_add_conv_handler = ConversationHandler( 
-            entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add'), CommandHandler('balance_add', balance_add_command_handler)],
+            entry_points=[CallbackQueryHandler(balance_add_command_handler, pattern='balance_add', ), CommandHandler('balance_add', balance_add_command_handler)],
             states={
                0: [MessageHandler(Filters.regex(r'[0-9]+'), update_balance_command_handler)],
             },
@@ -967,7 +964,7 @@ class Command(BaseCommand):
         admin_handler = CommandHandler('admin', admin_panel_start)
         updater.dispatcher.add_handler(admin_handler)
 
-        settings_info_handler = CallbackQueryHandler(settings_info, pattern='settings_info')
+        settings_info_handler = CallbackQueryHandler(settings_info, pattern='settings_info', )
         updater.dispatcher.add_handler(settings_info_handler)
 
         ## обработчик /start
@@ -977,27 +974,27 @@ class Command(BaseCommand):
         menu_handler = CommandHandler('main', start_command_handler)
         updater.dispatcher.add_handler(menu_handler)
 
-        menu_callback_handler = CallbackQueryHandler(start_command_handler, pattern='keyboard_main')
+        menu_callback_handler = CallbackQueryHandler(start_command_handler, pattern='keyboard_main', )
         updater.dispatcher.add_handler(menu_callback_handler)
 
         ## обработчик /help
         help_handler = CommandHandler('help', help_command_handler)
         updater.dispatcher.add_handler(help_handler)
 
-        help_callback_handler = CallbackQueryHandler(help_command_handler, pattern='keyboard_help')
+        help_callback_handler = CallbackQueryHandler(help_command_handler, pattern='keyboard_help', )
         updater.dispatcher.add_handler(help_callback_handler)
 
         ## обработчик ozon
         updater.dispatcher.add_handler(CommandHandler('ozon', ozon_report_handler))    
-        updater.dispatcher.add_handler(CallbackQueryHandler(ozon_report_handler, pattern='ozon_report'))
+        updater.dispatcher.add_handler(CallbackQueryHandler(ozon_report_handler, pattern='ozon_report', ))
 
         ## обработчик  демо отчета
         updater.dispatcher.add_handler(CommandHandler('demo_report', demo_report_handler))
-        updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_handler, pattern='demo_report'))
+        updater.dispatcher.add_handler(CallbackQueryHandler(demo_report_handler, pattern='demo_report', ))
 
         # операции с балансом
         updater.dispatcher.add_handler(PreCheckoutQueryHandler(pre_checkout_handler, pass_chat_data=True))
-        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info'))
+        updater.dispatcher.add_handler(CallbackQueryHandler(balance_info, pattern='balance_info',))
         updater.dispatcher.add_handler(CommandHandler('balance', balance_info))
 
 
@@ -1006,5 +1003,5 @@ class Command(BaseCommand):
         updater.dispatcher.add_handler(TypeHandler(Update, payment_confirmation_hanlder)) 
 
         #3 - запустить бесконечную обработку входящих сообщений
-        updater.start_polling(clean=True)
+        updater.start_polling(drop_pending_updates=True)
         updater.idle()
